@@ -1,0 +1,127 @@
+# -----------------------------
+# Python
+# -----------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+*.pkl
+*.log
+
+# Virtual envs
+.env
+.venv
+env/
+venv/
+
+# -----------------------------
+# Packages / Lockfiles
+# -----------------------------
+.poetry/
+poetry.lock
+uv.lock
+pip-wheel-metadata/
+
+# -----------------------------
+# Bytecode / Cache
+# -----------------------------
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+ruff_cache/
+
+# -----------------------------
+# IDE / Editor
+# -----------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# -----------------------------
+# OS junk
+# -----------------------------
+.DS_Store
+Thumbs.db
+
+# -----------------------------
+# FastAPI App / Runtime
+# -----------------------------
+*.db
+instance/
+*.sqlite3
+
+# -----------------------------
+# Docker Artifacts
+# -----------------------------
+*.tar
+*.img
+docker-compose.override.yml
+tmp/
+dist/
+build/
+
+# -----------------------------
+# Alembic
+# -----------------------------
+migrations/versions/*.pyc
+migrations/versions/*__auto*.py    # optional: ignore generated autos
+
+# -----------------------------
+# Logs & Runtime Files
+# -----------------------------
+logs/
+*.log
+*.out
+*.err
+
+# -----------------------------
+# Coverage / Testing
+# -----------------------------
+.coverage
+coverage.xml
+htmlcov/
+pytestdebug.log
+
+# -----------------------------
+# Model Files
+# -----------------------------
+*.onnx
+*.pt
+*.pth
+*.bin
+models/
+worker/model_cache/
+
+# -----------------------------
+# AWS / LocalStack
+# -----------------------------
+.aws/
+.localstack/
+localstack-data/
+.s3/
+.sqs/
+
+# -----------------------------
+# Credentials
+# -----------------------------
+.env.local
+.env.dev
+.env.prod
+*.pem
+*.key
+
+# -----------------------------
+# Temporary Audio
+# -----------------------------
+audio_tmp/
+*.wav
+*.mp3
+
+# -----------------------------
+# Mongo Dumps
+# -----------------------------
+dump/
+*.bson
+*.metadata.json
