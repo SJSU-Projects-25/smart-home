@@ -50,7 +50,9 @@ async def confirm_upload_endpoint(
     settings: Annotated[Settings, Depends(get_settings)] = None,
     events_repo: Annotated[EventsRepository, Depends(get_events_repo)] = None,
 ):
-    """Confirm upload completion and update event."""
-    job_id = confirm_upload(events_repo, request.s3_key, request.device_id, request.home_id, request.duration_ms)
+    """Confirm upload completion and update event, then enqueue to SQS."""
+    job_id = confirm_upload(
+        events_repo, request.s3_key, request.device_id, request.home_id, request.duration_ms, settings
+    )
 
     return ConfirmUploadResponse(job_id=job_id)

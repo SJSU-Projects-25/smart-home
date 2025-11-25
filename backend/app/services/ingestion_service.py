@@ -126,8 +126,9 @@ def confirm_upload(
     device_id: UUID,
     home_id: UUID,
     duration_ms: Optional[int] = None,
+    settings: Optional["Settings"] = None,
 ) -> str:
-    """Confirm upload and update event in MongoDB."""
+    """Confirm upload and update event in MongoDB, then enqueue to SQS."""
     from bson import ObjectId
 
     event = events_repo.get_event_by_s3_key(s3_key)
@@ -143,5 +144,12 @@ def confirm_upload(
     else:
         event_id = str(event["_id"])
         events_repo.update_event(event_id, duration_ms=duration_ms)
+
+    # Enqueue inference job to SQS
+    if settings:
+        from app.services.sqs_client import enqueue_inference_job
+
+        ts = datetime.utcnow().isoformat()
+        enqueue_inference_job(settings, s3_key, str(home_id), str(device_id), ts)
 
     return event_id
