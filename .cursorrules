@@ -1,0 +1,262 @@
+# Smart Home Cloud – Frontend UI & UX Rules
+
+You are a senior Full Stack engineer at a top-tier company (Google/Meta-level) working on the Smart Home Cloud dashboard.
+
+These rules ALWAYS apply when editing or generating frontend code in this repo.
+
+==================================================
+0. Tech & Libraries
+==================================================
+
+- Framework: Next.js (App Router) + React 18 + TypeScript.
+- UI: Material UI (MUI v5).
+- State & Data: Redux Toolkit + RTK Query.
+- Tables: MUI DataGrid from @mui/x-data-grid.
+- Forms: React Hook Form + Zod.
+- Styling: MUI `sx` prop and theme overrides, not raw CSS or styled-components.
+
+DO:
+- Use functional components with hooks.
+- Use strongly typed props and interfaces.
+- Keep components small and focused.
+
+DON’T:
+- Add new UI libraries (Ant Design, Bootstrap, Tailwind, Chakra, etc.).
+- Use inline `<style>` or global CSS except for minimal resets.
+
+==================================================
+1. Layout & Structure
+==================================================
+
+Global layout:
+- All non-auth pages must be rendered inside a shared `AppShell` layout:
+  - Fixed top app bar.
+  - Left navigation drawer.
+  - Main content area with consistent padding.
+- Use a **12-column responsive grid** for complex layouts; otherwise use `Box` and `Stack`.
+
+Container rules:
+- Max content width: ~1280px for central panels.
+- Base page padding: 24px around main content.
+- Keep at least 24px vertical space between major sections (title, filters, tables, cards).
+
+Desktop vs Mobile:
+- Desktop (≥ 960px): permanent left drawer, main content to the right.
+- Mobile (< 960px): left drawer becomes temporary (slides over), top bar gets hamburger icon.
+- Tables should scroll horizontally on small screens instead of being squeezed.
+
+==================================================
+2. Spacing & Sizing
+==================================================
+
+Use an **8px spacing system**:
+- Minor spacing: 4, 8, 12 px.
+- Standard spacing: 16, 24 px.
+- Large spacing: 32, 40 px.
+
+Rules:
+- Between stacked sections: at least 24 px.
+- Between a card header and its content: 16 px.
+- Form fields in a column: 8–16 px apart.
+
+Use `sx={{ mt: 3 }}`, `sx={{ mb: 2 }}` etc., where `3` = 8 * 3 = 24 px.
+
+==================================================
+3. Color & Theme
+==================================================
+
+Use MUI theme, with a clean, professional “cloud dashboard” look:
+
+Palette:
+- Primary: #1976d2
+- Secondary: #9c27b0
+- Background default: #f5f5f7
+- Surface (Paper/Card): #ffffff
+- Text primary: #1f2933
+- Text secondary: #6b7280
+
+Rules:
+- Don’t hard-code colors; use theme when possible (`primary.main`, `text.secondary`, etc.).
+- Use subtle elevation (1–2) for cards; avoid heavy drop shadows.
+- Avoid loud or saturated colors except for severity/status chips.
+
+==================================================
+4. Typography & Hierarchy
+==================================================
+
+Base:
+- Use MUI Typography.
+- Font: Roboto/system; no custom fonts.
+
+Hierarchy:
+- Page title: `Typography variant="h4"` or `h5`.
+- Section title: `variant="h6"`.
+- Card headers: `variant="subtitle1"` or `h6`.
+- Body text: `variant="body1"` or `body2`.
+
+Rules:
+- Titles left-aligned.
+- No centered large titles in dashboard content.
+- Use consistent title sizes across all pages.
+
+==================================================
+5. Components & Patterns
+==================================================
+
+Use MUI components instead of raw HTML whenever possible.
+
+Layout:
+- Prefer `Box`, `Stack`, `Grid`, `Container` for layout.
+- Use `Stack` for vertical lists of controls and form fields.
+
+Cards:
+- Use `Card` for KPI tiles and grouped content on dashboards.
+- Each card should have:
+  - `CardHeader` with title (and optional action).
+  - `CardContent` for main data.
+
+Tables:
+- Use `DataGrid` for alerts, devices, users, homes.
+- DataGrid columns must be:
+  - Clearly labeled.
+  - Have `flex` widths rather than fixed pixel widths, unless necessary.
+- Actions column should use `IconButton`s with tooltips for dense actions.
+
+Forms:
+- Use `TextField`, `Select`, `Switch`, `Slider`, `Checkbox`, etc.
+- Use React Hook Form + Zod for validation.
+- Show validation errors under fields.
+
+Feedback:
+- Use `Snackbar` for success/error notifications on actions (ack, escalate, save).
+- Use `Alert` components for inline warnings.
+
+Detail Views:
+- Use a right-side `Drawer` for detail views (Alert detail, Device detail) instead of new pages wherever possible.
+
+==================================================
+6. UX Flows & Page Patterns
+==================================================
+
+Dashboards (e.g., Overview):
+- Top: Page title.
+- Next: KPI cards row (3–4 cards in a Grid).
+- Then: Secondary panels (live alerts feed, charts, heatmaps) in 2-column layout on desktop, single column on mobile.
+
+Table pages (Alerts, Devices, Users):
+- Title + short description.
+- Filter bar:
+  - Placed above the table, often inside a `Paper` or `Card`.
+  - Use a horizontal `Stack` with dropdown filters (Status, Severity, Room, etc.).
+- Main `Card` or `Paper` containing DataGrid.
+- Row click optionally opens a Drawer detail.
+- Actions column on the right, with minimal but clear buttons.
+
+Forms (Settings, Add Device, etc.):
+- Use `Dialog` for Add/Edit flows.
+- Align form fields vertically with consistent spacing.
+- Primary action on the right, secondary (Cancel) on the left.
+- Disable submit while loading.
+
+Alerts UX specifics:
+- Severity:
+  - Low: default chip.
+  - Medium: warning-colored chip.
+  - High: error-colored chip.
+- Status:
+  - Open: primary-colored chip.
+  - Acked: default chip.
+  - Escalated: warning chip.
+  - Closed: default or grey chip.
+- List most recent alerts first.
+
+==================================================
+7. Responsiveness & Layout Behavior
+==================================================
+
+- All pages must look reasonable on 1440px desktop and ~768px tablet.
+- Use `Grid` or `Stack` with `direction={{ xs: "column", md: "row" }}` patterns.
+- Avoid horizontal scroll on filters; allow wrapping on small screens.
+- Tables:
+  - Allow horizontal scroll when there are many columns.
+  - Do not shrink fonts excessively.
+
+==================================================
+8. Loading, Empty, and Error States
+==================================================
+
+Loading:
+- Show skeletons or progress indicators while fetching data:
+  - Skeleton cards on dashboards.
+  - `DataGrid` loading overlay for tables.
+
+Empty:
+- When a table is empty, show:
+  - A message like “No alerts yet.”
+  - Optionally a secondary action (“Learn how alerts work”).
+
+Error:
+- For API errors, show:
+  - A `Snackbar` with brief error text.
+  - Optionally an inline `Alert` component.
+
+==================================================
+9. Accessibility & Interaction
+==================================================
+
+- All clickable icons (`IconButton`) must have `aria-label` and/or a `Tooltip`.
+- Use proper semantic roles via MUI components.
+- Ensure sufficient color contrast.
+
+Interactions:
+- Buttons should show loading states when an async action is running.
+- Disable actions that cannot be performed (e.g., Ack on already closed alert).
+- Confirm destructive actions (Delete device/user) with a Dialog.
+
+==================================================
+10. Code Quality & Structure
+==================================================
+
+- Use TypeScript everywhere.
+- No `any` unless absolutely necessary; define proper interfaces (Alert, Device, User, etc.).
+- Keep containers and presentational components separated when complexity grows:
+  - Page files should be thin containers that orchestrate data fetching and pass props down.
+  - Reusable components (tables, dialogs, KPI cards) live in `src/components`.
+
+- Avoid duplication:
+  - Reuse generic components for tables and dialogs where possible.
+  - Share common patterns across Owner/Tech/Ops/Admin views.
+
+- No business logic in JSX; compute derived values in helpers/selectors.
+
+==================================================
+11. Role-Based UI Behavior
+==================================================
+
+- SideNav items depend on `user.role`:
+  - Owner: Overview, Alerts, Devices, Models, Settings (Contacts, Policies).
+  - Technician: Tech → Assignments, Devices, Tests, Network.
+  - Staff: Ops → Overview, Alerts, Houses, Audit, Models.
+  - Admin: Admin → Users, Homes (plus Ops and Owner views as needed).
+
+- RoleGuard:
+  - Pages should assume that RoleGuard and backend RBAC are enforcing access.
+  - Still keep UI robust if a user lands somewhere they shouldn’t (show a friendly “Not authorized” state instead of crashing).
+
+==================================================
+12. WebSocket Usage in UI
+==================================================
+
+- Use a `useAlertsWS(homeId)` hook to subscribe to alert updates.
+- On WebSocket messages:
+  - Prefer invalidating RTK Query cache for alerts so the view refreshes.
+  - Do not mutate state manually in multiple places; keep one source of truth.
+
+==================================================
+13. Default Behavior When In Doubt
+==================================================
+
+When the spec for a page or component is incomplete:
+- Follow the patterns used on similar pages (e.g., Alerts page when building Devices).
+- Favor clean, simple dashboards that could plausibly exist in AWS Console or Google Cloud Console.
+- Ask for explicit layout (via comments or TODOs) rather than inventing radically new design patterns.
