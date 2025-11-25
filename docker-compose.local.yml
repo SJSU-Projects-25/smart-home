@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   localstack:
     image: localstack/localstack:latest
@@ -8,13 +6,20 @@ services:
       - SERVICES=sqs,s3
       - AWS_DEFAULT_REGION=us-west-2
       - DEBUG=1
-      - DATA_DIR=/tmp/localstack/data
+      - DATA_DIR=/var/lib/localstack
+      - PERSISTENCE=1
     ports:
       - "4566:4566"
       - "4510-4559:4510-4559"  # External services port range
     volumes:
-      - "./localstack-data:/tmp/localstack"
+      - "./localstack-data:/var/lib/localstack"
       - "/var/run/docker.sock:/var/run/docker.sock"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   postgres:
     image: postgres:15

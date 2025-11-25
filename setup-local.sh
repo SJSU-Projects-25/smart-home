@@ -24,10 +24,28 @@ $COMPOSE_CMD -f docker-compose.local.yml up -d
 
 echo ""
 echo "⏳ Waiting for services to be ready..."
-sleep 10
+sleep 5
 
 echo ""
 echo "📋 Setting up LocalStack (SQS queue and S3 bucket)..."
+
+# Wait for LocalStack to be ready
+echo "Waiting for LocalStack to be ready..."
+MAX_RETRIES=30
+RETRY_COUNT=0
+while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+    if curl -s http://localhost:4566/_localstack/health > /dev/null 2>&1; then
+        echo "✅ LocalStack is ready!"
+        break
+    fi
+    RETRY_COUNT=$((RETRY_COUNT + 1))
+    echo "  Waiting for LocalStack... ($RETRY_COUNT/$MAX_RETRIES)"
+    sleep 2
+done
+
+if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+    echo "⚠️  LocalStack did not become ready in time. Continuing anyway..."
+fi
 
 # Configure AWS CLI for LocalStack
 export AWS_ACCESS_KEY_ID=test
@@ -39,7 +57,7 @@ export AWS_ENDPOINT_URL=http://localhost:4566
 echo "Creating SQS queue: ingest-queue"
 aws --endpoint-url=http://localhost:4566 sqs create-queue \
     --queue-name ingest-queue \
-    --region us-west-2 || echo "Queue may already exist"
+    --region us-west-2 2>/dev/null || echo "Queue may already exist"
 
 # Get queue URL
 QUEUE_URL=$(aws --endpoint-url=http://localhost:4566 sqs get-queue-url \
@@ -58,9 +76,7 @@ fi
 echo "Creating S3 bucket: smart-home-audio"
 aws --endpoint-url=http://localhost:4566 s3 mb \
     s3://smart-home-audio \
-    --region us-west-2 || echo "Bucket may already exist"
-
-echo "✅ S3 Bucket created: smart-home-audio"
+    --region us-west-2 2>/dev/null && echo "✅ S3 Bucket created: smart-home-audio" || echo "⚠️  Bucket may already exist or creation failed"
 
 echo ""
 echo "🗄️  Running database migrations..."
