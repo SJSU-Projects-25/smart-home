@@ -1,0 +1,28 @@
+# Multi-stage build for Worker
+FROM python:3.11-slim AS base
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+# Set working directory
+WORKDIR /app
+
+# Copy dependency files
+COPY pyproject.toml uv.lock* ./
+
+# Install Python dependencies
+RUN uv sync --frozen || uv sync
+
+# Copy application code
+COPY app/ ./app/
+COPY worker/ ./worker/
+
+# Default command
+CMD ["uv", "run", "python", "-m", "worker.main"]
+
