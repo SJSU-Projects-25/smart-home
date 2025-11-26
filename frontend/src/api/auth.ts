@@ -1,6 +1,6 @@
 /** RTK Query endpoints for authentication. */
 import { api } from "./base";
-import { LoginRequest, LoginResponse } from "../types";
+import { LoginRequest, LoginResponse, RegisterRequest, User } from "../types";
 
 export const authApi = api.injectEndpoints({
   endpoints: (builder) => ({
@@ -11,8 +11,15 @@ export const authApi = api.injectEndpoints({
         body: credentials,
       }),
     }),
+    register: builder.mutation<User, RegisterRequest>({
+      query: (data) => ({
+        url: "/auth/register",
+        method: "POST",
+        body: data,
+      }),
+    }),
   }),
 });
 
-export const { useLoginMutation } = authApi;
+export const { useLoginMutation, useRegisterMutation } = authApi;
 

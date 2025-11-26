@@ -16,6 +16,8 @@ import {
   Tooltip,
   Snackbar,
   Alert,
+  MenuItem,
+  Chip,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -55,6 +57,12 @@ export default function AdminHomesPage() {
     name: "",
     owner_id: "",
     timezone: "America/Los_Angeles",
+    address: "",
+    contact_number: "",
+    home_size: "",
+    number_of_rooms: "",
+    house_type: "",
+    status: "New Home Registered",
   });
 
   const handleOpenDialog = (home?: AdminHome) => {
@@ -64,10 +72,26 @@ export default function AdminHomesPage() {
         name: home.name,
         owner_id: "",
         timezone: home.timezone,
+        address: home.address || "",
+        contact_number: home.contact_number || "",
+        home_size: home.home_size || "",
+        number_of_rooms: home.number_of_rooms?.toString() || "",
+        house_type: home.house_type || "",
+        status: home.status || "New Home Registered",
       });
     } else {
       setEditingHome(null);
-      setFormData({ name: "", owner_id: "", timezone: "America/Los_Angeles" });
+      setFormData({
+        name: "",
+        owner_id: "",
+        timezone: "America/Los_Angeles",
+        address: "",
+        contact_number: "",
+        home_size: "",
+        number_of_rooms: "",
+        house_type: "",
+        status: "New Home Registered",
+      });
     }
     setDialogOpen(true);
   };
@@ -85,6 +109,12 @@ export default function AdminHomesPage() {
           data: {
             name: formData.name,
             timezone: formData.timezone,
+            address: formData.address,
+            contact_number: formData.contact_number,
+            home_size: formData.home_size,
+            number_of_rooms: formData.number_of_rooms ? parseInt(formData.number_of_rooms) : undefined,
+            house_type: formData.house_type,
+            status: formData.status,
           },
         }).unwrap();
         setSnackbar({ open: true, message: "Home updated successfully", severity: "success" });
@@ -93,6 +123,11 @@ export default function AdminHomesPage() {
           name: formData.name,
           owner_id: formData.owner_id,
           timezone: formData.timezone,
+          address: formData.address,
+          contact_number: formData.contact_number,
+          home_size: formData.home_size,
+          number_of_rooms: formData.number_of_rooms ? parseInt(formData.number_of_rooms) : undefined,
+          house_type: formData.house_type,
         }).unwrap();
         setSnackbar({ open: true, message: "Home created successfully", severity: "success" });
       }
@@ -118,18 +153,45 @@ export default function AdminHomesPage() {
     setDrawerOpen(true);
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "New Home Registered":
+        return "info";
+      case "Device Installation In Progress":
+        return "warning";
+      case "Devices Installed and Configured":
+        return "secondary";
+      case "Home Registered (Final)":
+        return "success";
+      default:
+        return "default";
+    }
+  };
+
   const columns: GridColDef[] = [
-    { field: "name", headerName: "Home Name", width: 200, flex: 1 },
-    { field: "owner_id", headerName: "Owner ID", width: 200, valueGetter: (value) => value || "N/A" },
-    { field: "timezone", headerName: "Timezone", width: 180 },
-    { field: "rooms_count", headerName: "Rooms", width: 100, valueGetter: (value) => value || 0 },
-    { field: "devices_count", headerName: "Devices", width: 100, valueGetter: (value) => value || 0 },
-    { field: "open_alerts_count", headerName: "Open Alerts", width: 120, valueGetter: (value) => value || 0 },
+    { field: "name", headerName: "Home Name", width: 180 },
+    { field: "address", headerName: "Address", width: 200, valueGetter: (value) => value || "N/A" },
+    { field: "house_type", headerName: "Type", width: 130, valueGetter: (value) => value || "N/A" },
+    { field: "number_of_rooms", headerName: "Rooms", width: 80, valueGetter: (value) => value || 0 },
+    {
+      field: "status",
+      headerName: "Status",
+      width: 200,
+      renderCell: (params) => (
+        <Chip
+          label={params.value || "N/A"}
+          color={getStatusColor(params.value)}
+          size="small"
+        />
+      ),
+    },
+    { field: "devices_count", headerName: "Devices", width: 90, valueGetter: (value) => value || 0 },
+    { field: "open_alerts_count", headerName: "Alerts", width: 80, valueGetter: (value) => value || 0 },
     {
       field: "actions",
       type: "actions",
       headerName: "Actions",
-      width: 150,
+      width: 100,
       getActions: (params) => [
         <GridActionsCellItem
           icon={<EditIcon />}
@@ -184,7 +246,7 @@ export default function AdminHomesPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="md" fullWidth>
         <DialogTitle>{editingHome ? "Edit Home" : "Create Home"}</DialogTitle>
         <DialogContent>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 2 }}>
@@ -205,12 +267,69 @@ export default function AdminHomesPage() {
               />
             )}
             <TextField
+              label="Address"
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              fullWidth
+              multiline
+              rows={2}
+            />
+            <TextField
+              label="Contact Number"
+              value={formData.contact_number}
+              onChange={(e) => setFormData({ ...formData, contact_number: e.target.value })}
+              fullWidth
+            />
+            <Box sx={{ display: "flex", gap: 2 }}>
+              <TextField
+                label="Home Size (sq ft)"
+                value={formData.home_size}
+                onChange={(e) => setFormData({ ...formData, home_size: e.target.value })}
+                fullWidth
+              />
+              <TextField
+                label="Number of Rooms"
+                value={formData.number_of_rooms}
+                onChange={(e) => setFormData({ ...formData, number_of_rooms: e.target.value })}
+                type="number"
+                fullWidth
+              />
+            </Box>
+            <TextField
+              select
+              label="House Type"
+              value={formData.house_type}
+              onChange={(e) => setFormData({ ...formData, house_type: e.target.value })}
+              fullWidth
+            >
+              <MenuItem value="Single-family home">Single-family home</MenuItem>
+              <MenuItem value="Townhouse">Townhouse</MenuItem>
+              <MenuItem value="Condo">Condo</MenuItem>
+              <MenuItem value="Apartment">Apartment</MenuItem>
+              <MenuItem value="Other">Other</MenuItem>
+            </TextField>
+            <TextField
               label="Timezone"
               value={formData.timezone}
               onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
               required
               fullWidth
             />
+            {editingHome && (
+              <TextField
+                select
+                label="Status"
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                fullWidth
+                required
+              >
+                <MenuItem value="New Home Registered">New Home Registered</MenuItem>
+                <MenuItem value="Device Installation In Progress">Device Installation In Progress</MenuItem>
+                <MenuItem value="Devices Installed and Configured">Devices Installed and Configured</MenuItem>
+                <MenuItem value="Home Registered (Final)">Home Registered (Final)</MenuItem>
+              </TextField>
+            )}
           </Box>
         </DialogContent>
         <DialogActions>
@@ -225,20 +344,38 @@ export default function AdminHomesPage() {
         <Dialog open={drawerOpen} onClose={() => setDrawerOpen(false)} maxWidth="md" fullWidth>
           <DialogTitle>Home Details: {selectedHome.name}</DialogTitle>
           <DialogContent>
-            <Box sx={{ mt: 2 }}>
-              <Typography variant="body1" gutterBottom>
+            <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 1.5 }}>
+              <Typography variant="body1">
                 <strong>Owner ID:</strong> {selectedHome.owner_id || "N/A"}
               </Typography>
-              <Typography variant="body1" gutterBottom>
+              <Typography variant="body1">
+                <strong>Address:</strong> {selectedHome.address || "N/A"}
+              </Typography>
+              <Typography variant="body1">
+                <strong>Contact:</strong> {selectedHome.contact_number || "N/A"}
+              </Typography>
+              <Typography variant="body1">
+                <strong>Home Size:</strong> {selectedHome.home_size || "N/A"}
+              </Typography>
+              <Typography variant="body1">
+                <strong>Number of Rooms:</strong> {selectedHome.number_of_rooms || "N/A"}
+              </Typography>
+              <Typography variant="body1">
+                <strong>House Type:</strong> {selectedHome.house_type || "N/A"}
+              </Typography>
+              <Typography variant="body1">
+                <strong>Status:</strong> <Chip label={selectedHome.status || "N/A"} color={getStatusColor(selectedHome.status || "")} size="small" />
+              </Typography>
+              <Typography variant="body1">
                 <strong>Timezone:</strong> {selectedHome.timezone}
               </Typography>
-              <Typography variant="body1" gutterBottom>
-                <strong>Rooms:</strong> {selectedHome.rooms_count}
+              <Typography variant="body1">
+                <strong>Rooms Count:</strong> {selectedHome.rooms_count}
               </Typography>
-              <Typography variant="body1" gutterBottom>
+              <Typography variant="body1">
                 <strong>Devices:</strong> {selectedHome.devices_count}
               </Typography>
-              <Typography variant="body1" gutterBottom>
+              <Typography variant="body1">
                 <strong>Open Alerts:</strong> {selectedHome.open_alerts_count}
               </Typography>
             </Box>

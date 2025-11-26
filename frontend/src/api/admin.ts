@@ -6,6 +6,12 @@ export interface AdminUser {
   email: string;
   role: "owner" | "technician" | "staff" | "admin";
   home_id?: string;
+  first_name?: string;
+  last_name?: string;
+  contact_number?: string;
+  operational_area?: string;
+  experience_level?: string;
+  certifications?: string;
   created_at: string;
 }
 
@@ -28,6 +34,12 @@ export interface AdminHome {
   owner_email?: string;
   owner_id?: string;
   timezone: string;
+  address?: string;
+  contact_number?: string;
+  home_size?: string;
+  number_of_rooms?: number;
+  house_type?: string;
+  status?: string;
   rooms_count?: number;
   devices_count?: number;
   open_alerts_count?: number;
@@ -38,11 +50,22 @@ export interface AdminHomeCreate {
   name: string;
   owner_id: string;
   timezone: string;
+  address?: string;
+  contact_number?: string;
+  home_size?: string;
+  number_of_rooms?: number;
+  house_type?: string;
 }
 
 export interface AdminHomeUpdate {
   name?: string;
   timezone?: string;
+  address?: string;
+  contact_number?: string;
+  home_size?: string;
+  number_of_rooms?: number;
+  house_type?: string;
+  status?: string;
 }
 
 export const adminApi = api.injectEndpoints({

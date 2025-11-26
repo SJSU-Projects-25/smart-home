@@ -36,6 +36,16 @@ class User(Base):
         nullable=False,
         index=True,
     )  # 'owner', 'technician', 'staff', 'admin'
+    first_name: Mapped[str | None] = mapped_column(Text, nullable=True)
+    last_name: Mapped[str | None] = mapped_column(Text, nullable=True)
+    contact_number: Mapped[str | None] = mapped_column(Text, nullable=True)
+    
+    # Technician specific fields
+    operational_area: Mapped[str | None] = mapped_column(Text, nullable=True)
+    experience_level: Mapped[str | None] = mapped_column(Text, nullable=True)
+    certifications: Mapped[str | None] = mapped_column(Text, nullable=True)
+    profile_picture_url: Mapped[str | None] = mapped_column(Text, nullable=True) # Profile picture S3 URL
+
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True),
         server_default=func.now(),
@@ -54,6 +64,13 @@ class Home(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(Text, nullable=False)
+    address: Mapped[str | None] = mapped_column(Text, nullable=True)
+    contact_number: Mapped[str | None] = mapped_column(Text, nullable=True)
+    home_size: Mapped[str | None] = mapped_column(Text, nullable=True)
+    number_of_rooms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    house_type: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(50), nullable=False, default="New Home Registered")
+    
     owner_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="CASCADE"),

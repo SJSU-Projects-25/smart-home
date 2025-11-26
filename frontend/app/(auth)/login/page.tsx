@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Box,
@@ -68,7 +69,13 @@ export default function LoginPage() {
           minHeight: "100vh",
         }}
       >
-        <Paper elevation={3} sx={{ p: 4, width: "100%" }}>
+        <Paper elevation={3} sx={{ p: 4, width: "100%", display: "flex", flexDirection: "column", alignItems: "center" }}>
+          <Box
+            component="img"
+            src="/logo.png"
+            alt="Smart Home Logo"
+            sx={{ height: 60, mb: 2 }}
+          />
           <Typography variant="h4" component="h1" gutterBottom align="center">
             Smart Home Cloud Platform
           </Typography>
@@ -112,6 +119,13 @@ export default function LoginPage() {
             >
               {loading ? "Signing in..." : "Sign In"}
             </Button>
+            <Box sx={{ textAlign: "center" }}>
+              <Link href="/signup" style={{ textDecoration: "none" }}>
+                <Typography variant="body2" color="primary">
+                  Don't have an account? Sign Up
+                </Typography>
+              </Link>
+            </Box>
           </Box>
         </Paper>
       </Box>

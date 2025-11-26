@@ -11,6 +11,7 @@ import {
   MenuItem,
   Avatar,
   Box,
+  Divider,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import { useDispatch, useSelector } from "react-redux";
@@ -64,9 +65,17 @@ export function TopNav({ onMenuClick }: TopNavProps) {
         >
           <MenuIcon />
         </IconButton>
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          Smart Home Cloud Platform
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", flexGrow: 1 }}>
+          <Box
+            component="img"
+            src="/logo.png"
+            alt="Smart Home Logo"
+            sx={{ height: 40, mr: 2 }}
+          />
+          <Typography variant="h6" component="div">
+            Smart Home Cloud Platform
+          </Typography>
+        </Box>
         {user && (
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <IconButton
@@ -99,6 +108,15 @@ export function TopNav({ onMenuClick }: TopNavProps) {
                 <Typography variant="body2" color="text.secondary">
                   Role: {user.role}
                 </Typography>
+              </MenuItem>
+              <Divider />
+              <MenuItem
+                onClick={() => {
+                  router.push("/profile");
+                  handleMenuClose();
+                }}
+              >
+                Profile
               </MenuItem>
               <MenuItem onClick={handleLogout}>Logout</MenuItem>
             </Menu>

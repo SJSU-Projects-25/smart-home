@@ -5,6 +5,34 @@ export interface User {
   email: string;
   role: "owner" | "technician" | "staff" | "admin";
   home_id?: string;
+  first_name?: string;
+  last_name?: string;
+  contact_number?: string;
+  operational_area?: string;
+  experience_level?: string;
+  certifications?: string;
+  profile_picture_url?: string;
+}
+
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  role: "owner" | "technician";
+  first_name: string;
+  last_name: string;
+  contact_number: string;
+
+  // Home Owner fields
+  home_name?: string;
+  home_address?: string;
+  home_size?: string;
+  number_of_rooms?: number;
+  house_type?: string;
+
+  // Technician fields
+  operational_area?: string;
+  experience_level?: string;
+  certifications?: string;
 }
 
 export interface AuthState {

@@ -142,26 +142,44 @@ export default function AdminUsersPage() {
   };
 
   const columns: GridColDef[] = [
-    { field: "email", headerName: "Email", width: 250, flex: 1 },
+    { field: "email", headerName: "Email", width: 220 },
     {
       field: "role",
       headerName: "Role",
-      width: 150,
+      width: 120,
       valueFormatter: (value: string) =>
         value.charAt(0).toUpperCase() + value.slice(1),
     },
-    { field: "home_id", headerName: "Home Assignment", width: 200, valueGetter: (value) => value || "N/A" },
+    {
+      field: "first_name",
+      headerName: "First Name",
+      width: 120,
+      valueGetter: (value) => value || "N/A"
+    },
+    {
+      field: "last_name",
+      headerName: "Last Name",
+      width: 120,
+      valueGetter: (value) => value || "N/A"
+    },
+    {
+      field: "operational_area",
+      headerName: "Area",
+      width: 150,
+      valueGetter: (value) => value || "N/A"
+    },
+    { field: "home_id", headerName: "Home ID", width: 120, valueGetter: (value) => value ? String(value).substring(0, 8) + "..." : "N/A" },
     {
       field: "created_at",
       headerName: "Created",
-      width: 180,
+      width: 130,
       valueFormatter: (value: string) => dayjs(value).format("MMM D, YYYY"),
     },
     {
       field: "actions",
       type: "actions",
       headerName: "Actions",
-      width: 150,
+      width: 100,
       getActions: (params) => [
         <GridActionsCellItem
           icon={<EditIcon />}

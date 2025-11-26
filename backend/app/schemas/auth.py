@@ -37,3 +37,26 @@ class TokenData(BaseModel):
     user_id: str
     role: str
     home_id: Optional[str] = None
+
+
+class RegisterRequest(BaseModel):
+    """Register request schema."""
+
+    email: EmailStr
+    password: str
+    role: str  # 'owner', 'technician'
+    first_name: str
+    last_name: str
+    contact_number: str
+
+    # Home Owner fields
+    home_name: Optional[str] = None
+    home_address: Optional[str] = None
+    home_size: Optional[str] = None
+    number_of_rooms: Optional[int] = None
+    house_type: Optional[str] = None
+
+    # Technician fields
+    operational_area: Optional[str] = None
+    experience_level: Optional[str] = None
+    certifications: Optional[str] = None

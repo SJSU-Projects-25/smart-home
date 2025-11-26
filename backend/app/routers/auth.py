@@ -7,8 +7,8 @@ from sqlalchemy.orm import Session
 
 from app.core.config import Settings
 from app.deps import get_db, get_settings
-from app.schemas.auth import LoginRequest, LoginResponse, UserResponse
-from app.services.auth_service import authenticate_user, create_access_token_for_user, get_user_home_id
+from app.schemas.auth import LoginRequest, LoginResponse, UserResponse, RegisterRequest
+from app.services.auth_service import authenticate_user, create_access_token_for_user, get_user_home_id, register_user
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -38,4 +38,19 @@ async def login(
             home_id=home_id,
         ),
         token=token,
+    )
+
+
+@router.post("/register", response_model=UserResponse)
+async def register(
+    register_data: RegisterRequest,
+    db: Annotated[Session, Depends(get_db)],
+):
+    """Register endpoint."""
+    user = register_user(db, register_data)
+    return UserResponse(
+        id=user.id,
+        email=user.email,
+        role=user.role,
+        home_id=get_user_home_id(db, user),
     )
