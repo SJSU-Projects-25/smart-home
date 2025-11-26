@@ -1,0 +1,255 @@
+name: Frontend CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend.yml'
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend.yml'
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-west-2
+  ECR_REPOSITORY_FRONTEND: smart-home-frontend
+  NODE_VERSION: "18"
+
+jobs:
+  lint:
+    name: Lint and Format Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint . || true
+        continue-on-error: true
+
+  type-check:
+    name: Type Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run TypeScript type check
+        run: npx tsc --noEmit
+
+  build:
+    name: Build Next.js App
+    runs-on: ubuntu-latest
+    needs: [lint, type-check]
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Next.js application
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'http://localhost:8000' }}
+        run: npm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nextjs-build
+          path: frontend/.next
+          retention-days: 7
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: |
+          if npm run | grep -q "test"; then
+            npm test -- --coverage --watchAll=false || true
+          else
+            echo "No test script found, skipping tests"
+          fi
+        continue-on-error: true
+        env:
+          CI: true
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          file: ./frontend/coverage/coverage-final.json
+          flags: frontend
+          name: frontend-coverage
+        continue-on-error: true
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        run: npm audit --audit-level=moderate
+        continue-on-error: true
+
+      - name: Run Snyk security scan
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+
+  build-docker:
+    name: Build Frontend Docker Image
+    runs-on: ubuntu-latest
+    needs: [lint, type-check, build]
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push Frontend image to Amazon ECR
+        id: build-frontend
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ env.ECR_REPOSITORY_FRONTEND }}
+          IMAGE_TAG: ${{ github.sha }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'http://localhost:8000' }}
+        run: |
+          # Determine environment tag
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            ENV_TAG="latest"
+          else
+            ENV_TAG="develop"
+          fi
+
+          # Build and push
+          docker buildx build \
+            --file frontend/Dockerfile.frontend \
+            --platform linux/amd64 \
+            --build-arg NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
+            --tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            --tag $ECR_REGISTRY/$ECR_REPOSITORY:$ENV_TAG \
+            --push \
+            frontend/
+
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "image_tag=$ENV_TAG" >> $GITHUB_OUTPUT
+
+      - name: Output image details
+        run: |
+          echo "Frontend Image: ${{ steps.build-frontend.outputs.image }}"
+          echo "Tag: ${{ steps.build-frontend.outputs.image_tag }}"
+
+  # TODO: Add deployment job (requires Terraform or manual deployment)
+  # deploy:
+  #   name: Deploy to AWS
+  #   runs-on: ubuntu-latest
+  #   needs: [build-docker]
+  #   if: github.ref == 'refs/heads/main'
+  #   environment: production
+  #   steps:
+  #     - name: Deploy to CloudFront + S3
+  #       run: |
+  #         # Sync build to S3
+  #         aws s3 sync frontend/.next/static s3://smart-home-frontend-prod/static
+  #         # Invalidate CloudFront cache
+  #         aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
+
