@@ -260,6 +260,24 @@ docker-compose -f docker-compose.local.yml exec postgres psql -U postgres -d sma
 docker-compose -f docker-compose.local.yml exec mongo mongosh smart_home
 ```
 
+#### MongoDB Web UI (Mongo Express)
+
+Mongo Express provides a web-based interface to inspect MongoDB data locally.
+
+- **URL**: http://localhost:8081
+- **Username**: `admin`
+- **Password**: `admin`
+
+**MongoDB Collections:**
+
+The application uses the `smart_home` database with the following collections:
+
+- **events** - Audio ingestion events, processing status, and results
+  - Stores event documents with fields: `timestamp`, `home_id`, `device_id`, `s3_key`, `duration_ms`, `scores`, `decision`, `status`
+  - Used by the ingestion service and worker for tracking audio uploads and processing
+
+Additional collections (telemetry, audit_logs) may be added as the platform evolves.
+
 ## API Documentation
 
 Once the API is running, access the interactive API documentation:
