@@ -78,9 +78,33 @@ aws --endpoint-url=http://localhost:4566 s3 mb \
     s3://smart-home-audio \
     --region us-west-2 2>/dev/null && echo "✅ S3 Bucket created: smart-home-audio" || echo "⚠️  Bucket may already exist or creation failed"
 
+# Configure CORS for the S3 bucket
+echo "📋 Configuring CORS for S3 bucket..."
+CORS_CONFIG='{
+  "CORSRules": [
+    {
+      "AllowedOrigins": ["http://localhost:3000", "http://localhost:8000"],
+      "AllowedMethods": ["GET", "PUT", "POST", "DELETE", "HEAD"],
+      "AllowedHeaders": ["*"],
+      "ExposeHeaders": ["ETag"],
+      "MaxAgeSeconds": 3000
+    }
+  ]
+}'
+echo "$CORS_CONFIG" > /tmp/cors-config.json
+aws --endpoint-url=http://localhost:4566 s3api put-bucket-cors \
+    --bucket smart-home-audio \
+    --cors-configuration file:///tmp/cors-config.json \
+    && echo "✅ CORS configured for S3 bucket" \
+    || echo "⚠️  Failed to configure CORS (may already be set)"
+
 echo ""
 echo "🗄️  Running database migrations..."
 $COMPOSE_CMD -f docker-compose.local.yml exec api uv run alembic upgrade head
+
+echo ""
+echo "🌱 Seeding initial data..."
+$COMPOSE_CMD -f docker-compose.local.yml exec api uv run python scripts/seed_data.py || echo "⚠️  Seed script failed or data already exists"
 
 echo ""
 echo "✅ Setup complete!"
@@ -94,4 +118,10 @@ echo "  - LocalStack: http://localhost:4566"
 echo ""
 echo "To view logs: $COMPOSE_CMD -f docker-compose.local.yml logs -f"
 echo "To stop: $COMPOSE_CMD -f docker-compose.local.yml down"
+echo ""
+echo "📋 Login Credentials (from seed data):"
+echo "  - admin@gmail.com / admin123 (admin)"
+echo "  - owner@example.com / owner123 (owner)"
+echo "  - tech@example.com / tech123 (technician)"
+echo "  - staff@example.com / staff123 (staff)"
 

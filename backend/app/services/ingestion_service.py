@@ -95,11 +95,26 @@ def create_presigned_url(
 
     # Generate presigned URL
     try:
-        url = s3_client.generate_presigned_url(
+        # For presigned URLs that will be used by the browser, we need to use
+        # the frontend-accessible endpoint. Create a separate client for this.
+        if settings.aws_s3_endpoint_url_frontend:
+            # Use frontend-accessible endpoint for presigned URL generation
+            presigned_client_kwargs = s3_client_kwargs.copy()
+            presigned_client_kwargs["endpoint_url"] = settings.aws_s3_endpoint_url_frontend
+            presigned_s3_client = boto3.client("s3", **presigned_client_kwargs)
+        else:
+            presigned_s3_client = s3_client
+        
+        url = presigned_s3_client.generate_presigned_url(
             "put_object",
             Params={"Bucket": settings.s3_bucket, "Key": s3_key, "ContentType": mime},
             ExpiresIn=expiration,
         )
+        
+        # Additional safety: replace any remaining localstack references
+        if "localstack:4566" in url:
+            url = url.replace("localstack:4566", "localhost:4566")
+        
         return url, s3_key
     except ClientError as e:
         raise Exception(f"Failed to generate presigned URL: {str(e)}")

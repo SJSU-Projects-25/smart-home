@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     # LocalStack endpoints (optional, for local development)
     aws_sqs_endpoint_url: str | None = None
     aws_s3_endpoint_url: str | None = None
+    # Frontend-accessible S3 endpoint (for presigned URLs in browser)
+    aws_s3_endpoint_url_frontend: str | None = None
 
     # JWT
     jwt_secret: str
