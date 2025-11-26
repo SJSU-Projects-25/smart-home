@@ -106,6 +106,18 @@ services:
       - ./backend:/app
     command: ["uv", "run", "python", "-m", "worker.main"]
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.frontend
+    container_name: smart-home-frontend
+    depends_on:
+      - api
+    environment:
+      - NEXT_PUBLIC_API_URL=http://api:8000
+    ports:
+      - "3000:3000"
+
 volumes:
   postgres-data:
   mongo-data:
