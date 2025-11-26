@@ -1,6 +1,6 @@
 "use client";
 
-import { Typography } from "@mui/material";
+import { Typography, Box } from "@mui/material";
 
 export const dynamic = "force-dynamic";
 
@@ -8,10 +8,12 @@ export default function OpsModelsPage() {
   return (
     <>
       <Typography variant="h4" gutterBottom>
-        Models
+        Global Model Defaults
       </Typography>
-      <Typography variant="body1">TODO: Ops Models page</Typography>
+      <Typography variant="body1" color="text.secondary">
+        Global model configuration page - similar to Owner Models page but for system-wide defaults.
+        Implementation pending backend endpoints for global model configs.
+      </Typography>
     </>
   );
 }
-

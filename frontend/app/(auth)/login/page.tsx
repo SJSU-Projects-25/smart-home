@@ -12,12 +12,10 @@ import {
   Paper,
   Alert,
 } from "@mui/material";
-import axios from "axios";
 import { setCredentials } from "@/src/store/slices/authSlice";
 import { RootState } from "@/src/store";
-import { LoginRequest, LoginResponse } from "@/src/types";
+import { useLoginMutation } from "@/src/api/auth";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -26,8 +24,8 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [login, { isLoading: loading }] = useLoginMutation();
 
   useEffect(() => {
     setMounted(true);
@@ -47,23 +45,15 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
 
     try {
-      const request: LoginRequest = { email, password };
-      const response = await axios.post<LoginResponse>(
-        `${API_URL}/auth/login`,
-        request
-      );
-
-      dispatch(setCredentials(response.data));
+      const response = await login({ email, password }).unwrap();
+      dispatch(setCredentials(response));
       router.push("/overview");
     } catch (err: any) {
       setError(
-        err.response?.data?.detail || "Login failed. Please check your credentials."
+        err.data?.detail || err.message || "Login failed. Please check your credentials."
       );
-    } finally {
-      setLoading(false);
     }
   };
 

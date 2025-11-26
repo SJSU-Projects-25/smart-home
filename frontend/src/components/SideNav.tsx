@@ -47,7 +47,7 @@ const ownerNavItems: NavItem[] = [
   { label: "Alerts", path: "/alerts", icon: <NotificationsIcon />, roles: ["owner"] },
   { label: "Devices", path: "/devices", icon: <DevicesIcon />, roles: ["owner"] },
   { label: "Models", path: "/models", icon: <ScienceIcon />, roles: ["owner"] },
-  { label: "Settings", path: "/settings/contacts", icon: <SettingsIcon />, roles: ["owner"] },
+  { label: "Settings", path: "/settings/contacts", icon: <SettingsIcon />, roles: ["owner"], section: "Settings" },
 ];
 
 const technicianNavItems: NavItem[] = [
