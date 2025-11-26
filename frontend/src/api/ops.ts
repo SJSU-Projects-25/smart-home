@@ -18,6 +18,7 @@ export interface OpsHouse {
   devices_count: number;
   online_count: number;
   open_alerts_count: number;
+  rooms_count?: number;
 }
 
 export interface AuditLog {

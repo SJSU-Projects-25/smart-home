@@ -7,6 +7,7 @@ from app.deps import get_settings
 from app.routers import (
     admin,
     alerts,
+    assignments,
     auth,
     devices,
     ingest,
@@ -38,6 +39,7 @@ def create_app(settings: Settings) -> FastAPI:
     # Include routers
     app.include_router(auth.router)
     app.include_router(users.router)
+    app.include_router(assignments.router)
     app.include_router(devices.router)
     app.include_router(ingest.router)
     app.include_router(alerts.router)

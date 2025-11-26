@@ -120,11 +120,11 @@ export default function AdminHomesPage() {
 
   const columns: GridColDef[] = [
     { field: "name", headerName: "Home Name", width: 200, flex: 1 },
-    { field: "owner_email", headerName: "Owner", width: 200 },
+    { field: "owner_id", headerName: "Owner ID", width: 200, valueGetter: (value) => value || "N/A" },
     { field: "timezone", headerName: "Timezone", width: 180 },
-    { field: "rooms_count", headerName: "Rooms", width: 100 },
-    { field: "devices_count", headerName: "Devices", width: 100 },
-    { field: "open_alerts_count", headerName: "Open Alerts", width: 120 },
+    { field: "rooms_count", headerName: "Rooms", width: 100, valueGetter: (value) => value || 0 },
+    { field: "devices_count", headerName: "Devices", width: 100, valueGetter: (value) => value || 0 },
+    { field: "open_alerts_count", headerName: "Open Alerts", width: 120, valueGetter: (value) => value || 0 },
     {
       field: "actions",
       type: "actions",
@@ -227,7 +227,7 @@ export default function AdminHomesPage() {
           <DialogContent>
             <Box sx={{ mt: 2 }}>
               <Typography variant="body1" gutterBottom>
-                <strong>Owner:</strong> {selectedHome.owner_email}
+                <strong>Owner ID:</strong> {selectedHome.owner_id || "N/A"}
               </Typography>
               <Typography variant="body1" gutterBottom>
                 <strong>Timezone:</strong> {selectedHome.timezone}

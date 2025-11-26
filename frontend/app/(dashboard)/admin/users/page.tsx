@@ -81,28 +81,53 @@ export default function AdminUsersPage() {
   const handleSubmit = async () => {
     try {
       if (editingUser) {
+        const updatePayload: any = {
+          email: formData.email,
+          role: formData.role,
+        };
+        // Only include home_id if it's a valid non-empty string (UUID format)
+        const homeIdTrimmed = formData.home_id?.trim();
+        if (homeIdTrimmed && homeIdTrimmed !== "") {
+          // Validate UUID format before sending
+          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          if (uuidRegex.test(homeIdTrimmed)) {
+            updatePayload.home_id = homeIdTrimmed;
+          } else {
+            setSnackbar({ open: true, message: "Invalid home_id format. Must be a valid UUID.", severity: "error" });
+            return;
+          }
+        }
         await updateUser({
           id: editingUser.id,
-          data: {
-            email: formData.email,
-            role: formData.role,
-            home_id: formData.home_id || undefined,
-          },
+          data: updatePayload,
         }).unwrap();
         setSnackbar({ open: true, message: "User updated successfully", severity: "success" });
       } else {
-        await createUser({
+        const createPayload: any = {
           email: formData.email,
           password: formData.password,
           role: formData.role,
-          home_id: formData.home_id || undefined,
-        }).unwrap();
+        };
+        // Only include home_id if it's a valid non-empty string (UUID format)
+        const homeIdTrimmed = formData.home_id?.trim();
+        if (homeIdTrimmed && homeIdTrimmed !== "") {
+          // Validate UUID format before sending
+          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          if (uuidRegex.test(homeIdTrimmed)) {
+            createPayload.home_id = homeIdTrimmed;
+          } else {
+            setSnackbar({ open: true, message: "Invalid home_id format. Must be a valid UUID.", severity: "error" });
+            return;
+          }
+        }
+        await createUser(createPayload).unwrap();
         setSnackbar({ open: true, message: "User created successfully", severity: "success" });
       }
       handleCloseDialog();
       refetch();
-    } catch (error) {
-      setSnackbar({ open: true, message: "Operation failed", severity: "error" });
+    } catch (error: any) {
+      const errorMessage = error?.data?.detail || error?.message || "Operation failed";
+      setSnackbar({ open: true, message: errorMessage, severity: "error" });
     }
   };
 

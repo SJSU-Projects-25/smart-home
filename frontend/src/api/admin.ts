@@ -25,11 +25,12 @@ export interface AdminUserUpdate {
 export interface AdminHome {
   id: string;
   name: string;
-  owner_email: string;
+  owner_email?: string;
+  owner_id?: string;
   timezone: string;
-  rooms_count: number;
-  devices_count: number;
-  open_alerts_count: number;
+  rooms_count?: number;
+  devices_count?: number;
+  open_alerts_count?: number;
   created_at: string;
 }
 
