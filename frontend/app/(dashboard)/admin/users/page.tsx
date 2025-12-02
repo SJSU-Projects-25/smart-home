@@ -55,6 +55,12 @@ export default function AdminUsersPage() {
     password: "",
     role: "owner" as "owner" | "technician" | "staff" | "admin",
     home_id: "",
+    first_name: "",
+    last_name: "",
+    contact_number: "",
+    operational_area: "",
+    experience_level: "",
+    certifications: "",
   });
 
   const handleOpenDialog = (user?: AdminUser) => {
@@ -65,10 +71,27 @@ export default function AdminUsersPage() {
         password: "",
         role: user.role,
         home_id: user.home_id || "",
+        first_name: user.first_name || "",
+        last_name: user.last_name || "",
+        contact_number: user.contact_number || "",
+        operational_area: user.operational_area || "",
+        experience_level: user.experience_level || "",
+        certifications: user.certifications || "",
       });
     } else {
       setEditingUser(null);
-      setFormData({ email: "", password: "", role: "owner", home_id: "" });
+      setFormData({
+        email: "",
+        password: "",
+        role: "owner",
+        home_id: "",
+        first_name: "",
+        last_name: "",
+        contact_number: "",
+        operational_area: "",
+        experience_level: "",
+        certifications: "",
+      });
     }
     setDialogOpen(true);
   };
@@ -84,6 +107,12 @@ export default function AdminUsersPage() {
         const updatePayload: any = {
           email: formData.email,
           role: formData.role,
+          first_name: formData.first_name || undefined,
+          last_name: formData.last_name || undefined,
+          contact_number: formData.contact_number || undefined,
+          operational_area: formData.operational_area || undefined,
+          experience_level: formData.experience_level || undefined,
+          certifications: formData.certifications || undefined,
         };
         // Only include home_id if it's a valid non-empty string (UUID format)
         const homeIdTrimmed = formData.home_id?.trim();
@@ -107,6 +136,12 @@ export default function AdminUsersPage() {
           email: formData.email,
           password: formData.password,
           role: formData.role,
+          first_name: formData.first_name || undefined,
+          last_name: formData.last_name || undefined,
+          contact_number: formData.contact_number || undefined,
+          operational_area: formData.operational_area || undefined,
+          experience_level: formData.experience_level || undefined,
+          certifications: formData.certifications || undefined,
         };
         // Only include home_id if it's a valid non-empty string (UUID format)
         const homeIdTrimmed = formData.home_id?.trim();
@@ -263,6 +298,48 @@ export default function AdminUsersPage() {
               onChange={(e) => setFormData({ ...formData, home_id: e.target.value })}
               fullWidth
             />
+            <TextField
+              label="First Name"
+              value={formData.first_name}
+              onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+              fullWidth
+            />
+            <TextField
+              label="Last Name"
+              value={formData.last_name}
+              onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+              fullWidth
+            />
+            <TextField
+              label="Contact Number"
+              value={formData.contact_number}
+              onChange={(e) => setFormData({ ...formData, contact_number: e.target.value })}
+              fullWidth
+            />
+            {(formData.role === "technician" || editingUser?.role === "technician") && (
+              <>
+                <TextField
+                  label="Operational Area"
+                  value={formData.operational_area}
+                  onChange={(e) => setFormData({ ...formData, operational_area: e.target.value })}
+                  fullWidth
+                />
+                <TextField
+                  label="Experience Level"
+                  value={formData.experience_level}
+                  onChange={(e) => setFormData({ ...formData, experience_level: e.target.value })}
+                  fullWidth
+                />
+                <TextField
+                  label="Certifications"
+                  value={formData.certifications}
+                  onChange={(e) => setFormData({ ...formData, certifications: e.target.value })}
+                  fullWidth
+                  multiline
+                  rows={2}
+                />
+              </>
+            )}
           </Box>
         </DialogContent>
         <DialogActions>

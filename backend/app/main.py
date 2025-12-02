@@ -16,6 +16,7 @@ from app.routers import (
     owner,
     profile,
     settings as settings_router,
+    tech,
     users,
     ws,
 )
@@ -50,6 +51,7 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(models_cfg.router)
     app.include_router(ops.router)
     app.include_router(owner.router)
+    app.include_router(tech.router)
     app.include_router(admin.router)
     app.include_router(ws.router)
 

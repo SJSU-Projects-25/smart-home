@@ -77,6 +77,13 @@ export interface OwnerOverviewResponse {
     room_id: string;
     room_name: string;
     devices_count: number;
+    alert_count?: number;
+  }>;
+  alertTrends?: Array<{
+    date: string;
+    high: number;
+    medium: number;
+    low: number;
   }>;
 }
 

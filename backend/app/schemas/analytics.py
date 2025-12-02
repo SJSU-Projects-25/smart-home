@@ -41,7 +41,8 @@ class OwnerOverviewResponse(BaseModel):
     eventsLast24h: int
     totalDevices: int
     roomsCount: Optional[int] = None
-    perRoomStats: Optional[list[dict]] = None  # Stub for future use
+    perRoomStats: Optional[list[dict]] = None
+    alertTrends: Optional[list[dict]] = None
 
 
 class AlertsHeatmapItem(BaseModel):

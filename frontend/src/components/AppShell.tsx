@@ -41,6 +41,8 @@ export function AppShell({ children }: AppShellProps) {
             p: 3, // 24px padding (3 * 8px)
             mt: 8, // 64px for AppBar (8 * 8px)
             width: { md: `calc(100% - 240px)` },
+            backgroundColor: "background.default",
+            minHeight: "calc(100vh - 64px)",
           }}
         >
           {children}

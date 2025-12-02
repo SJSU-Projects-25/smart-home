@@ -14,7 +14,6 @@ import {
   ListItem,
   ListItemText,
   Chip,
-  Grid,
   Skeleton,
   Alert,
   Button,
@@ -25,10 +24,20 @@ import {
   TableHead,
   TableRow,
   Paper,
+  Divider,
 } from "@mui/material";
+import {
+  NotificationsActive as AlertsIcon,
+  Devices as DevicesIcon,
+  Event as EventsIcon,
+  Home as HomeIcon,
+} from "@mui/icons-material";
 import { KpiCard } from "@/src/components/KpiCard";
 import { EventsOverTimeChart } from "@/src/components/charts/EventsOverTimeChart";
 import { AlertsBySeverityChart } from "@/src/components/charts/AlertsBySeverityChart";
+import { DeviceStatusChart } from "@/src/components/charts/DeviceStatusChart";
+import { RoomActivityChart } from "@/src/components/charts/RoomActivityChart";
+import { AlertTrendChart } from "@/src/components/charts/AlertTrendChart";
 import { DeviceUptimeGauge } from "@/src/components/charts/DeviceUptimeGauge";
 import { useGetOwnerOverviewQuery, useGetOwnerEventsTimeseriesQuery } from "@/src/api/analytics";
 import { useListAlertsQuery } from "@/src/api/alerts";
@@ -97,16 +106,16 @@ export default function OverviewPage() {
   if (overviewLoading) {
     return (
       <>
-        <Typography variant="h4" gutterBottom>
+        <Typography variant="h4" gutterBottom sx={{ fontWeight: 400, mb: 4 }}>
           Overview
         </Typography>
-        <Grid container spacing={3} sx={{ mt: 2 }}>
-          {[1, 2, 3].map((i) => (
-            <Grid item xs={12} sm={6} md={4} key={i}>
-              <Skeleton variant="rectangular" height={120} />
-            </Grid>
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
+          {[1, 2, 3, 4].map((i) => (
+            <Box key={i} sx={{ flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 12px)", md: "1 1 calc(25% - 18px)" } }}>
+              <Skeleton variant="rectangular" height={120} sx={{ borderRadius: 2 }} />
+            </Box>
           ))}
-        </Grid>
+        </Box>
       </>
     );
   }
@@ -114,7 +123,7 @@ export default function OverviewPage() {
   if (overviewError) {
     return (
       <>
-        <Typography variant="h4" gutterBottom>
+        <Typography variant="h4" gutterBottom sx={{ fontWeight: 400, mb: 4 }}>
           Overview
         </Typography>
         <Alert severity="error" sx={{ mt: 3 }}>
@@ -135,40 +144,76 @@ export default function OverviewPage() {
     low: recentAlerts.filter((a: AlertType) => a.severity === "low").length,
   };
 
-  return (
-    <>
-      <Typography variant="h4" gutterBottom>
-        Overview
-      </Typography>
+  const devicesOffline = overviewData.totalDevices - overviewData.devicesOnlineCount;
 
-      {/* KPI Cards */}
-      <Grid container spacing={3} sx={{ mt: 1, mb: 3 }}>
-        <Grid item xs={12} sm={6} md={4}>
-          <KpiCard title="Open Alerts" value={overviewData.openAlertsCount} />
-        </Grid>
-        <Grid item xs={12} sm={6} md={4}>
+  return (
+    <Box>
+      {/* Page Header */}
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" sx={{ fontWeight: 400, mb: 1 }}>
+          Overview
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Monitor your smart home activity and device status
+        </Typography>
+      </Box>
+
+      {/* KPI Cards Row */}
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3 , mb: 4 }}>
+        <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 12px)", md: "1 1 calc(25% - 18px)" } }}>
+          <KpiCard
+            title="Open Alerts"
+            value={overviewData.openAlertsCount}
+            subtitle={`${overviewData.openAlertsHigh} high priority`}
+            icon={<AlertsIcon />}
+            color={overviewData.openAlertsCount > 0 ? "error" : "success"}
+          />
+        </Box>
+        <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 12px)", md: "1 1 calc(25% - 18px)" } }}>
           <KpiCard
             title="Devices Online"
             value={overviewData.devicesOnlineCount}
             subtitle={`of ${overviewData.totalDevices} total`}
+            icon={<DevicesIcon />}
+            color={overviewData.devicesOnlineCount === overviewData.totalDevices ? "success" : "warning"}
           />
-        </Grid>
-        <Grid item xs={12} sm={6} md={4}>
-          <KpiCard title="Events (Last 24h)" value={overviewData.eventsLast24h} />
-        </Grid>
-      </Grid>
+        </Box>
+        <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 12px)", md: "1 1 calc(25% - 18px)" } }}>
+          <KpiCard
+            title="Events (24h)"
+            value={overviewData.eventsLast24h}
+            subtitle="Last 24 hours"
+            icon={<EventsIcon />}
+            color="info"
+          />
+        </Box>
+        <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 12px)", md: "1 1 calc(25% - 18px)" } }}>
+          <KpiCard
+            title="Rooms"
+            value={overviewData.roomsCount || 0}
+            subtitle="Total rooms"
+            icon={<HomeIcon />}
+            color="primary"
+          />
+        </Box>
+      </Box>
 
-      {/* Charts Row */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        {/* Events Over Time Chart */}
-        <Grid item xs={12} md={8}>
-          <Card elevation={1} sx={{ height: "100%" }}>
-            <CardHeader title="Events Activity (Last 24 Hours)" />
-            <CardContent>
+      {/* Charts Row 1: Events and Alerts */}
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3 , mb: 4 }}>
+        {/* Events Over Time */}
+        <Box sx={{ flex: { xs: "1 1 100%", lg: "1 1 calc(66.666% - 12px)" } }}>
+          <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider", height: "100%" }}>
+            <CardHeader
+              title="Events Activity"
+              subheader="Last 24 hours"
+              sx={{ pb: 1 }}
+            />
+            <Divider />
+            <CardContent sx={{ pt: 3 }}>
               {eventsTimeseries?.data ? (
-                <EventsOverTimeChart data={eventsTimeseries.data} height={350} />
+                <EventsOverTimeChart data={eventsTimeseries.data} height={320} />
               ) : (
-                <Box sx={{ height: 350, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Box sx={{ height: 320, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <Typography variant="body2" color="text.secondary">
                     Loading events data...
                   </Typography>
@@ -176,87 +221,116 @@ export default function OverviewPage() {
               )}
             </CardContent>
           </Card>
-        </Grid>
+        </Box>
 
-        {/* Alerts by Severity Chart */}
-        <Grid item xs={12} md={4}>
-          <Card elevation={1} sx={{ height: "100%" }}>
-            <CardHeader title="Alerts by Severity" />
-            <CardContent>
-              <AlertsBySeverityChart data={alertsBySeverity} height={350} variant="pie" />
+        {/* Alerts by Severity */}
+        <Box sx={{ flex: { xs: "1 1 100%", lg: "1 1 calc(33.333% - 12px)" } }}>
+          <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider", height: "100%" }}>
+            <CardHeader
+              title="Alerts by Severity"
+              sx={{ pb: 1 }}
+            />
+            <Divider />
+            <CardContent sx={{ pt: 3 }}>
+              <AlertsBySeverityChart data={alertsBySeverity} height={320} variant="pie" />
             </CardContent>
           </Card>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
 
-      {/* Second Row: Recent Alerts and Device Status */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        {/* Recent Alerts */}
-        <Grid item xs={12} md={6}>
-          <Card elevation={1}>
+      {/* Charts Row 2: Device Status and Alert Trends */}
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3 , mb: 4 }}>
+        {/* Device Status */}
+        <Box sx={{ flex: { xs: "1 1 100%", md: "1 1 calc(50% - 12px)" } }}>
+          <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider" }}>
             <CardHeader
-              title="Recent Alerts"
-              action={
-                <Button size="small" component={Link} href="/alerts">
-                  View all
-                </Button>
-              }
+              title="Device Status"
+              sx={{ pb: 1 }}
             />
-            <CardContent>
-              {recentAlerts.length === 0 ? (
-                <Typography variant="body2" color="text.secondary">
-                  No recent alerts
-                </Typography>
+            <Divider />
+            <CardContent sx={{ pt: 3 }}>
+              <DeviceStatusChart
+                online={overviewData.devicesOnlineCount}
+                offline={devicesOffline}
+                height={280}
+              />
+            </CardContent>
+          </Card>
+        </Box>
+
+        {/* Alert Trends */}
+        <Box sx={{ flex: { xs: "1 1 100%", md: "1 1 calc(50% - 12px)" } }}>
+          <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider" }}>
+            <CardHeader
+              title="Alert Trends"
+              subheader="Last 7 days"
+              sx={{ pb: 1 }}
+            />
+            <Divider />
+            <CardContent sx={{ pt: 3 }}>
+              {overviewData.alertTrends ? (
+                <AlertTrendChart data={overviewData.alertTrends} height={280} period="7d" />
               ) : (
-                <List>
-                  {recentAlerts.map((alert: AlertType) => (
-                    <ListItem key={alert.id} divider>
-                      <ListItemText
-                        primary={
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                            <Typography variant="body1">
-                              {alert.type
-                                .split("_")
-                                .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                                .join(" ")}
-                            </Typography>
-                            <Chip
-                              label={alert.severity}
-                              color={getSeverityColor(alert.severity) as any}
-                              size="small"
-                            />
-                          </Box>
-                        }
-                        secondary={
-                          <>
-                            {dayjs(alert.created_at).format("MMM D, YYYY h:mm A")}
-                            {alert.room_id && ` • Room: ${alert.room_id}`}
-                          </>
-                        }
-                      />
-                    </ListItem>
-                  ))}
-                </List>
+                <Box sx={{ height: 280, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Typography variant="body2" color="text.secondary">
+                    No alert trend data available
+                  </Typography>
+                </Box>
               )}
             </CardContent>
           </Card>
-        </Grid>
+        </Box>
+      </Box>
 
-        {/* Device Uptime Summary */}
-        <Grid item xs={12} md={6}>
-          <Card elevation={1}>
-            <CardHeader title="Device Health Summary" />
-            <CardContent>
-              {overviewData.devicesOnlineCount > 0 ? (
-                <Box>
-                  <DeviceUptimeGauge
-                    uptimePercent={(overviewData.devicesOnlineCount / overviewData.totalDevices) * 100}
-                    deviceName="Overall System"
-                  />
-                  <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 1 }}>
-                    {overviewData.devicesOnlineCount} of {overviewData.totalDevices} devices online
+      {/* Charts Row 3: Room Activity and Device Health */}
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3 , mb: 4 }}>
+        {/* Room Activity */}
+        <Box sx={{ flex: { xs: "1 1 100%", md: "1 1 calc(66.666% - 12px)" } }}>
+          <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider" }}>
+            <CardHeader
+              title="Room Activity"
+              subheader="Devices and alerts per room"
+              sx={{ pb: 1 }}
+            />
+            <Divider />
+            <CardContent sx={{ pt: 3 }}>
+              {overviewData.perRoomStats && overviewData.perRoomStats.length > 0 ? (
+                <RoomActivityChart
+                  data={overviewData.perRoomStats.map((room) => ({
+                    room_id: room.room_id,
+                    room_name: room.room_name,
+                    device_count: room.devices_count,
+                    alert_count: room.alert_count || 0,
+                  }))}
+                  height={300}
+                  metric="devices"
+                />
+              ) : (
+                <Box sx={{ height: 300, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Typography variant="body2" color="text.secondary">
+                    No room data available
                   </Typography>
                 </Box>
+              )}
+            </CardContent>
+          </Card>
+        </Box>
+
+        {/* Device Health Summary */}
+        <Box sx={{ flex: { xs: "1 1 100%", md: "1 1 calc(33.333% - 12px)" } }}>
+          <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider" }}>
+            <CardHeader
+              title="System Health"
+              sx={{ pb: 1 }}
+            />
+            <Divider />
+            <CardContent sx={{ pt: 3 }}>
+              {overviewData.devicesOnlineCount > 0 ? (
+                <DeviceUptimeGauge
+                  uptimePercent={(overviewData.devicesOnlineCount / overviewData.totalDevices) * 100}
+                  deviceName="Overall System"
+                  height={250}
+                />
               ) : (
                 <Typography variant="body2" color="text.secondary">
                   No device data available
@@ -264,41 +338,122 @@ export default function OverviewPage() {
               )}
             </CardContent>
           </Card>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
 
-      {/* Third Row: Rooms & Devices */}
-      <Card elevation={1}>
-        <CardHeader title="Rooms & Devices" />
-        <CardContent>
-          {overviewData.perRoomStats && overviewData.perRoomStats.length > 0 ? (
-            <TableContainer component={Paper} variant="outlined">
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Room</TableCell>
-                    <TableCell align="right">Devices</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {overviewData.perRoomStats.map((room) => (
-                    <TableRow key={room.room_id}>
-                      <TableCell>{room.room_name}</TableCell>
-                      <TableCell align="right">{room.devices_count}</TableCell>
-                    </TableRow>
+      {/* Recent Alerts and Rooms Table */}
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
+        {/* Recent Alerts */}
+        <Box sx={{ flex: { xs: "1 1 100%", md: "1 1 calc(50% - 12px)" } }}>
+          <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider" }}>
+            <CardHeader
+              title="Recent Alerts"
+              action={
+                <Button size="small" component={Link} href="/alerts" variant="text">
+                  View all
+                </Button>
+              }
+              sx={{ pb: 1 }}
+            />
+            <Divider />
+            <CardContent sx={{ pt: 2 }}>
+              {recentAlerts.length === 0 ? (
+                <Typography variant="body2" color="text.secondary" sx={{ py: 4, textAlign: "center" }}>
+                  No recent alerts
+                </Typography>
+              ) : (
+                <List sx={{ p: 0 }}>
+                  {recentAlerts.map((alert: AlertType, index: number) => (
+                    <Box key={alert.id}>
+                      <ListItem>
+                        <ListItemText
+                          primary={
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+                              <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                                {alert.type
+                                  .split("_")
+                                  .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                                  .join(" ")}
+                              </Typography>
+                              <Chip
+                                label={alert.severity}
+                                color={getSeverityColor(alert.severity) as any}
+                                size="small"
+                                sx={{ height: 20, fontSize: "0.7rem" }}
+                              />
+                            </Box>
+                          }
+                          secondary={
+                            <Typography variant="caption" color="text.secondary">
+                              {dayjs(alert.created_at).format("MMM D, YYYY h:mm A")}
+                              {alert.room_id && ` • Room: ${alert.room_id}`}
+                            </Typography>
+                          }
+                        />
+                      </ListItem>
+                      {index < recentAlerts.length - 1 && <Divider />}
+                    </Box>
                   ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          ) : (
-            <Typography variant="body2" color="text.secondary">
-              {overviewData.roomsCount
-                ? `Total rooms: ${overviewData.roomsCount}`
-                : "No room data available"}
-            </Typography>
-          )}
-        </CardContent>
-      </Card>
-    </>
+                </List>
+              )}
+            </CardContent>
+          </Card>
+        </Box>
+
+        {/* Rooms & Devices Table */}
+        <Box sx={{ flex: { xs: "1 1 100%", md: "1 1 calc(50% - 12px)" } }}>
+          <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider" }}>
+            <CardHeader
+              title="Rooms & Devices"
+              sx={{ pb: 1 }}
+            />
+            <Divider />
+            <CardContent sx={{ pt: 2 }}>
+              {overviewData.perRoomStats && overviewData.perRoomStats.length > 0 ? (
+                <TableContainer>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 600 }}>Room</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 600 }}>Devices</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 600 }}>Alerts</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {overviewData.perRoomStats.map((room) => (
+                        <TableRow key={room.room_id} hover>
+                          <TableCell>{room.room_name}</TableCell>
+                          <TableCell align="right">{room.devices_count}</TableCell>
+                          <TableCell align="right">
+                            {room.alert_count && room.alert_count > 0 ? (
+                              <Chip
+                                label={room.alert_count}
+                                color="error"
+                                size="small"
+                                sx={{ height: 20 }}
+                              />
+                            ) : (
+                              <Typography variant="body2" color="text.secondary">
+                                0
+                              </Typography>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              ) : (
+                <Typography variant="body2" color="text.secondary" sx={{ py: 4, textAlign: "center" }}>
+                  {overviewData.roomsCount
+                    ? `Total rooms: ${overviewData.roomsCount}`
+                    : "No room data available"}
+                </Typography>
+              )}
+            </CardContent>
+          </Card>
+        </Box>
+      </Box>
+    </Box>
   );
 }

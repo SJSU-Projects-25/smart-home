@@ -54,13 +54,21 @@ export function TopNav({ onMenuClick }: TopNavProps) {
   };
 
   return (
-    <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
-      <Toolbar>
+    <AppBar
+      position="fixed"
+      elevation={0}
+      sx={{
+        zIndex: (theme) => theme.zIndex.drawer + 1,
+        backgroundColor: "background.paper",
+        borderBottom: "1px solid",
+        borderColor: "divider",
+      }}
+    >
+      <Toolbar sx={{ minHeight: 64 }}>
         <IconButton
-          color="inherit"
           edge="start"
           onClick={onMenuClick}
-          sx={{ mr: 2, display: { md: "none" } }}
+          sx={{ mr: 2, display: { md: "none" }, color: "text.primary" }}
           aria-label="toggle menu"
         >
           <MenuIcon />
@@ -70,9 +78,9 @@ export function TopNav({ onMenuClick }: TopNavProps) {
             component="img"
             src="/logo.png"
             alt="Smart Home Logo"
-            sx={{ height: 40, mr: 2 }}
+            sx={{ height: 32, mr: 2 }}
           />
-          <Typography variant="h6" component="div">
+          <Typography variant="h6" component="div" sx={{ color: "text.primary", fontWeight: 400 }}>
             Smart Home Cloud Platform
           </Typography>
         </Box>
@@ -84,7 +92,7 @@ export function TopNav({ onMenuClick }: TopNavProps) {
               sx={{ ml: 2 }}
               aria-label="account menu"
             >
-              <Avatar sx={{ width: 32, height: 32, bgcolor: "secondary.main" }}>
+              <Avatar sx={{ width: 32, height: 32, bgcolor: "primary.main", color: "primary.contrastText" }}>
                 {getInitials(user.email)}
               </Avatar>
             </IconButton>

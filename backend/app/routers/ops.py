@@ -9,6 +9,7 @@ from app.core.config import Settings
 from app.deps import get_current_user, get_db, get_settings, require_role
 from app.db.models import User
 from app.schemas.analytics import AlertsHeatmapResponse, OpsOverviewResponse
+from app.services.admin_analytics_service import get_admin_overview
 from app.services.alerts_heatmap_service import get_alerts_heatmap
 from app.services.ops_service import get_ops_overview, list_ops_homes
 

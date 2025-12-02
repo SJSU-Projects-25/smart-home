@@ -51,7 +51,8 @@ const ownerNavItems: NavItem[] = [
 ];
 
 const technicianNavItems: NavItem[] = [
-  { label: "Assignments", path: "/tech/assignments", icon: <AssignmentIcon />, roles: ["technician"], section: "Tech" },
+  { label: "Overview", path: "/tech/overview", icon: <DashboardIcon />, roles: ["technician"], section: "Tech" },
+  { label: "Assignments", path: "/tech/assignments", icon: <AssignmentIcon />, roles: ["technician"] },
   { label: "Devices", path: "/tech/devices", icon: <DevicesIcon />, roles: ["technician"] },
   { label: "Tests", path: "/tech/tests", icon: <ScienceIcon />, roles: ["technician"] },
   { label: "Network", path: "/tech/network", icon: <NetworkCheckIcon />, roles: ["technician"] },
@@ -66,8 +67,13 @@ const staffNavItems: NavItem[] = [
 ];
 
 const adminNavItems: NavItem[] = [
-  { label: "Users", path: "/admin/users", icon: <PeopleIcon />, roles: ["admin"], section: "Admin" },
+  { label: "Overview", path: "/admin/overview", icon: <DashboardIcon />, roles: ["admin"], section: "Admin" },
+  { label: "Users", path: "/admin/users", icon: <PeopleIcon />, roles: ["admin"] },
   { label: "Homes", path: "/admin/homes", icon: <HomeIcon />, roles: ["admin"] },
+  { label: "Alerts", path: "/admin/alerts", icon: <NotificationsIcon />, roles: ["admin"] },
+  { label: "Devices", path: "/admin/devices", icon: <DevicesIcon />, roles: ["admin"] },
+  { label: "Models", path: "/admin/models", icon: <ScienceIcon />, roles: ["admin"] },
+  { label: "Audit", path: "/admin/audit", icon: <AssignmentIcon />, roles: ["admin"] },
 ];
 
 export function SideNav({ open, onClose }: SideNavProps) {
@@ -87,12 +93,8 @@ export function SideNav({ open, onClose }: SideNavProps) {
       case "staff":
         return staffNavItems;
       case "admin":
-        // Admin sees Admin section, then Owner section (without duplicate Overview), then Operations section
-        return [
-          ...adminNavItems,
-          ...ownerNavItems.filter((item) => item.path !== "/overview"), // Remove owner Overview for admin
-          ...staffNavItems,
-        ];
+        // Admin only sees Admin section - no duplicates
+        return adminNavItems;
       default:
         return [];
     }
@@ -119,6 +121,9 @@ export function SideNav({ open, onClose }: SideNavProps) {
           width: DRAWER_WIDTH,
           boxSizing: "border-box",
           mt: 8, // 64px for AppBar
+          backgroundColor: "background.paper",
+          borderRight: "1px solid",
+          borderColor: "divider",
         },
       }}
     >

@@ -71,6 +71,9 @@ def seed_all_data(force: bool = False):
             email="admin@gmail.com",
             password_hash=hash_password("admin123"),
             role="admin",
+            first_name="Admin",
+            last_name="User",
+            contact_number="+1-555-0100",
         )
         db.add(admin_user)
         db.flush()
@@ -79,6 +82,9 @@ def seed_all_data(force: bool = False):
             email="owner@example.com",
             password_hash=hash_password("owner123"),
             role="owner",
+            first_name="John",
+            last_name="Doe",
+            contact_number="+1-555-0101",
         )
         db.add(owner_user)
         db.flush()
@@ -87,6 +93,9 @@ def seed_all_data(force: bool = False):
             email="owner2@example.com",
             password_hash=hash_password("owner123"),
             role="owner",
+            first_name="Jane",
+            last_name="Smith",
+            contact_number="+1-555-0102",
         )
         db.add(owner_user2)
         db.flush()
@@ -95,6 +104,12 @@ def seed_all_data(force: bool = False):
             email="tech@example.com",
             password_hash=hash_password("tech123"),
             role="technician",
+            first_name="Mike",
+            last_name="Johnson",
+            contact_number="+1-555-0103",
+            operational_area="San Francisco Bay Area",
+            experience_level="Senior",
+            certifications="Smart Home Installation, Network Security",
         )
         db.add(tech_user)
         db.flush()
@@ -103,6 +118,9 @@ def seed_all_data(force: bool = False):
             email="staff@example.com",
             password_hash=hash_password("staff123"),
             role="staff",
+            first_name="Sarah",
+            last_name="Williams",
+            contact_number="+1-555-0104",
         )
         db.add(staff_user)
         db.flush()
@@ -115,6 +133,12 @@ def seed_all_data(force: bool = False):
             name="Admin Home",
             owner_id=admin_user.id,
             timezone="America/Los_Angeles",
+            address="123 Admin Street, San Francisco, CA 94102",
+            contact_number="+1-555-0100",
+            home_size="2500",
+            number_of_rooms=5,
+            house_type="Single-family home",
+            status="Devices Installed and Configured",
         )
         db.add(admin_home)
         db.flush()
@@ -123,6 +147,12 @@ def seed_all_data(force: bool = False):
             name="Owner Home",
             owner_id=owner_user.id,
             timezone="America/Los_Angeles",
+            address="456 Oak Avenue, San Jose, CA 95110",
+            contact_number="+1-555-0101",
+            home_size="3200",
+            number_of_rooms=6,
+            house_type="Single-family home",
+            status="Devices Installed and Configured",
         )
         db.add(owner_home)
         db.flush()
@@ -131,6 +161,12 @@ def seed_all_data(force: bool = False):
             name="Owner 2 Home",
             owner_id=owner_user2.id,
             timezone="America/Los_Angeles",
+            address="789 Pine Road, Oakland, CA 94601",
+            contact_number="+1-555-0102",
+            home_size="1800",
+            number_of_rooms=4,
+            house_type="Townhouse",
+            status="Device Installation In Progress",
         )
         db.add(owner_home2)
         db.flush()

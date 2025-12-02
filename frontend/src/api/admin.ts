@@ -20,12 +20,25 @@ export interface AdminUserCreate {
   password: string;
   role: "owner" | "technician" | "staff" | "admin";
   home_id?: string;
+  first_name?: string;
+  last_name?: string;
+  contact_number?: string;
+  operational_area?: string;
+  experience_level?: string;
+  certifications?: string;
 }
 
 export interface AdminUserUpdate {
   email?: string;
   role?: "owner" | "technician" | "staff" | "admin";
   home_id?: string;
+  first_name?: string;
+  last_name?: string;
+  contact_number?: string;
+  operational_area?: string;
+  experience_level?: string;
+  certifications?: string;
+  profile_picture_url?: string;
 }
 
 export interface AdminHome {
@@ -66,6 +79,55 @@ export interface AdminHomeUpdate {
   number_of_rooms?: number;
   house_type?: string;
   status?: string;
+}
+
+export interface AdminAlert {
+  id: string;
+  type: string;
+  severity: "low" | "medium" | "high";
+  status: "open" | "acked" | "escalated" | "closed";
+  score: number;
+  home_id: string;
+  room_id?: string;
+  device_id?: string;
+  created_at: string;
+  acked_at?: string;
+  escalated_at?: string;
+  closed_at?: string;
+}
+
+export interface AdminDevice {
+  id: string;
+  name: string;
+  type: string;
+  status: "online" | "offline";
+  home_id: string;
+  home_name?: string;
+  room_id?: string;
+  room_name?: string;
+  last_seen_at?: string;
+  firmware_version?: string;
+  created_at: string;
+}
+
+export interface AdminModel {
+  id: string;
+  model_key: string;
+  enabled: boolean;
+  threshold: number;
+  params: Record<string, any>;
+  home_id: string;
+  home_name?: string;
+}
+
+export interface AdminAuditLog {
+  id: string;
+  user_email: string;
+  action: string;
+  resource_type: string;
+  resource_id: string;
+  timestamp: string;
+  details: string;
 }
 
 export const adminApi = api.injectEndpoints({
@@ -130,6 +192,38 @@ export const adminApi = api.injectEndpoints({
       }),
       invalidatesTags: ["User"],
     }),
+    listAlerts: builder.query<AdminAlert[], { status?: string; severity?: string }>({
+      query: (params) => ({
+        url: "/admin/alerts",
+        method: "GET",
+        params,
+      }),
+      providesTags: ["Alert"],
+    }),
+    listDevices: builder.query<AdminDevice[], { status?: string; device_type?: string }>({
+      query: (params) => ({
+        url: "/admin/devices",
+        method: "GET",
+        params,
+      }),
+      providesTags: ["Device"],
+    }),
+    listModels: builder.query<AdminModel[], { enabled?: boolean }>({
+      query: (params) => ({
+        url: "/admin/models",
+        method: "GET",
+        params,
+      }),
+      providesTags: ["ModelConfig"],
+    }),
+    listAuditLogs: builder.query<AdminAuditLog[], { user?: string; action?: string; start_date?: string; end_date?: string }>({
+      query: (params) => ({
+        url: "/admin/audit",
+        method: "GET",
+        params,
+      }),
+      providesTags: [],
+    }),
   }),
 });
 
@@ -142,5 +236,9 @@ export const {
   useCreateHomeMutation,
   useUpdateHomeMutation,
   useDeleteHomeMutation,
+  useListAlertsQuery,
+  useListDevicesQuery,
+  useListModelsQuery,
+  useListAuditLogsQuery,
 } = adminApi;
 
