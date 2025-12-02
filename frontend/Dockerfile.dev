@@ -9,6 +9,9 @@ COPY package*.json ./
 # Install dependencies
 RUN npm ci
 
+# Copy the rest of the files (needed for Next.js to work)
+COPY . .
+
 # Expose port
 EXPOSE 3000
 

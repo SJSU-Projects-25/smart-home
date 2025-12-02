@@ -129,6 +129,10 @@ echo "🌱 Seeding initial data..."
 $COMPOSE_CMD -f docker-compose.local.yml exec api uv run python scripts/seed_data.py || echo "⚠️  Seed script failed or data already exists"
 
 echo ""
+echo "📊 Seeding MongoDB events data..."
+$COMPOSE_CMD -f docker-compose.local.yml exec api uv run python scripts/seed_mongo_events.py || echo "⚠️  MongoDB seed script failed or data already exists"
+
+echo ""
 echo "✅ Setup complete!"
 echo ""
 echo "📝 Services are running:"

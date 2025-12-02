@@ -5,20 +5,24 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-from app.deps import get_current_user, get_db, require_role
+from app.core.config import Settings
+from app.deps import get_current_user, get_db, get_settings, require_role
 from app.db.models import User
+from app.schemas.analytics import AlertsHeatmapResponse, OpsOverviewResponse
+from app.services.alerts_heatmap_service import get_alerts_heatmap
 from app.services.ops_service import get_ops_overview, list_ops_homes
 
 router = APIRouter(prefix="/ops", tags=["ops"])
 
 
-@router.get("/overview")
+@router.get("/overview", response_model=OpsOverviewResponse)
 async def ops_overview_endpoint(
     current_user: Annotated[User, Depends(require_role("staff", "admin"))] = None,
     db: Annotated[Session, Depends(get_db)] = None,
+    settings: Annotated[Settings, Depends(get_settings)] = None,
 ):
     """Get operations overview (staff/admin only)."""
-    return get_ops_overview(db)
+    return get_ops_overview(db, settings)
 
 
 @router.get("/houses")
@@ -28,6 +32,20 @@ async def list_ops_houses_endpoint(
 ):
     """List all homes with statistics (staff/admin only)."""
     return list_ops_homes(db)
+
+
+@router.get("/alerts/heatmap", response_model=AlertsHeatmapResponse)
+async def alerts_heatmap_endpoint(
+    period: Annotated[str, Query(description="Time period: '24h' or '7d'")] = "24h",
+    current_user: Annotated[User, Depends(require_role("staff", "admin"))] = None,
+    db: Annotated[Session, Depends(get_db)] = None,
+):
+    """Get alerts heatmap data aggregated by home and severity (staff/admin only)."""
+    if period not in ["24h", "7d"]:
+        period = "24h"
+    
+    data = get_alerts_heatmap(db, period)
+    return AlertsHeatmapResponse(period=period, data=data)
 
 
 @router.get("/audit")

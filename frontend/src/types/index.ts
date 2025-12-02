@@ -66,3 +66,52 @@ export interface Alert {
   notes?: string;
 }
 
+export interface OwnerOverviewResponse {
+  openAlertsCount: number;
+  openAlertsHigh: number;
+  devicesOnlineCount: number;
+  eventsLast24h: number;
+  totalDevices: number;
+  roomsCount?: number;
+  perRoomStats?: Array<{
+    room_id: string;
+    room_name: string;
+    devices_count: number;
+  }>;
+}
+
+export interface OpsOverviewResponse {
+  totalHomes: number;
+  totalDevices: number;
+  totalDevicesOnline: number;
+  openAlertsBySeverity: {
+    high: number;
+    medium: number;
+    low: number;
+  };
+  eventsByHomeLast24h: Array<{
+    home_id: string;
+    count: number;
+  }>;
+  deviceUptimeSummary: Array<{
+    device_id: string;
+    event_count: number;
+    last_event?: string;
+    uptime_percent: number;
+  }>;
+}
+
+export interface AlertsHeatmapResponse {
+  period: string;
+  data: Array<{
+    home_id: string;
+    home_name: string;
+    total_alerts: number;
+    alerts_by_severity: {
+      high: number;
+      medium: number;
+      low: number;
+    };
+  }>;
+}
+

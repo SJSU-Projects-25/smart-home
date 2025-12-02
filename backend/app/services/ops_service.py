@@ -5,12 +5,15 @@ from uuid import UUID
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.core.config import Settings
 from app.db.models import Alert, Device, Home, User
+from app.services.events_repository import EventsRepository
 
 
-def get_ops_overview(db: Session) -> dict:
+def get_ops_overview(db: Session, settings: Settings) -> dict:
     """Get operations overview statistics."""
     total_homes = db.query(func.count(Home.id)).scalar() or 0
+    total_devices = db.query(func.count(Device.id)).scalar() or 0
     total_devices_online = db.query(func.count(Device.id)).filter(Device.status == "online").scalar() or 0
 
     # Count alerts by severity
@@ -19,10 +22,24 @@ def get_ops_overview(db: Session) -> dict:
     for alert in open_alerts:
         alerts_by_severity[alert.severity] = alerts_by_severity.get(alert.severity, 0) + 1
 
+    # Get events from MongoDB
+    events_repo = EventsRepository(settings.mongo_uri)
+    events_by_home = events_repo.count_events_by_home_last_24h()
+    
+    # Get device uptime summary (aggregate across all homes)
+    all_homes = db.query(Home).all()
+    device_uptime_summary = []
+    for home in all_homes:
+        home_uptime = events_repo.device_uptime_summary(home.id)
+        device_uptime_summary.extend(home_uptime)
+
     return {
-        "total_homes": total_homes,
-        "total_devices_online": total_devices_online,
-        "open_alerts_by_severity": alerts_by_severity,
+        "totalHomes": total_homes,
+        "totalDevices": total_devices,
+        "totalDevicesOnline": total_devices_online,
+        "openAlertsBySeverity": alerts_by_severity,
+        "eventsByHomeLast24h": events_by_home,
+        "deviceUptimeSummary": device_uptime_summary,
     }
 
 
