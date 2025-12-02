@@ -58,7 +58,7 @@ const technicianNavItems: NavItem[] = [
 ];
 
 const staffNavItems: NavItem[] = [
-  { label: "Overview", path: "/ops/overview", icon: <DashboardIcon />, roles: ["staff"], section: "Ops" },
+  { label: "Overview", path: "/ops/overview", icon: <DashboardIcon />, roles: ["staff"], section: "Operations" },
   { label: "Alerts", path: "/ops/alerts", icon: <NotificationsIcon />, roles: ["staff"] },
   { label: "Houses", path: "/ops/houses", icon: <HomeIcon />, roles: ["staff"] },
   { label: "Audit", path: "/ops/audit", icon: <AssignmentIcon />, roles: ["staff"] },
@@ -87,7 +87,12 @@ export function SideNav({ open, onClose }: SideNavProps) {
       case "staff":
         return staffNavItems;
       case "admin":
-        return [...adminNavItems, ...ownerNavItems, ...staffNavItems];
+        // Admin sees Admin section, then Owner section (without duplicate Overview), then Operations section
+        return [
+          ...adminNavItems,
+          ...ownerNavItems.filter((item) => item.path !== "/overview"), // Remove owner Overview for admin
+          ...staffNavItems,
+        ];
       default:
         return [];
     }

@@ -83,6 +83,14 @@ def seed_all_data(force: bool = False):
         db.add(owner_user)
         db.flush()
 
+        owner_user2 = User(
+            email="owner2@example.com",
+            password_hash=hash_password("owner123"),
+            role="owner",
+        )
+        db.add(owner_user2)
+        db.flush()
+
         tech_user = User(
             email="tech@example.com",
             password_hash=hash_password("tech123"),
@@ -99,7 +107,7 @@ def seed_all_data(force: bool = False):
         db.add(staff_user)
         db.flush()
 
-        print("   ✅ Created 4 users")
+        print("   ✅ Created 5 users (1 admin, 2 owners, 1 tech, 1 staff)")
 
         # 2. Create Homes
         print("\n🏠 Creating homes...")
@@ -119,7 +127,15 @@ def seed_all_data(force: bool = False):
         db.add(owner_home)
         db.flush()
 
-        print("   ✅ Created 2 homes")
+        owner_home2 = Home(
+            name="Owner 2 Home",
+            owner_id=owner_user2.id,
+            timezone="America/Los_Angeles",
+        )
+        db.add(owner_home2)
+        db.flush()
+
+        print("   ✅ Created 3 homes")
 
         # 3. Create Rooms
         print("\n🚪 Creating rooms...")
@@ -128,6 +144,12 @@ def seed_all_data(force: bool = False):
             ("Kitchen", "kitchen", owner_home.id),
             ("Bedroom", "bedroom", owner_home.id),
             ("Bathroom", "bathroom", owner_home.id),
+            # Rooms for owner_home2
+            ("Living Room", "living", owner_home2.id),
+            ("Kitchen", "kitchen", owner_home2.id),
+            # Rooms for admin_home
+            ("Living Room", "living", admin_home.id),
+            ("Office", "office", admin_home.id),
         ]
         rooms = []
         for name, room_type, home_id in rooms_data:
@@ -139,11 +161,18 @@ def seed_all_data(force: bool = False):
 
         # 4. Create Devices
         print("\n📱 Creating devices...")
+        # Devices for owner_home (first 4 rooms)
         devices_data = [
             ("Living Room Microphone", "microphone", owner_home.id, rooms[0].id, "online"),
             ("Kitchen Camera", "camera", owner_home.id, rooms[1].id, "online"),
             ("Bedroom Microphone", "microphone", owner_home.id, rooms[2].id, "offline"),
             ("Bathroom Camera", "camera", owner_home.id, rooms[3].id, "online"),
+            # Devices for owner_home2
+            ("Living Room Microphone", "microphone", owner_home2.id, rooms[4].id, "online"),
+            ("Kitchen Camera", "camera", owner_home2.id, rooms[5].id, "online"),
+            # Devices for admin_home
+            ("Living Room Camera", "camera", admin_home.id, rooms[6].id, "online"),
+            ("Office Microphone", "microphone", admin_home.id, rooms[7].id, "online"),
         ]
         devices = []
         for name, device_type, home_id, room_id, status in devices_data:
@@ -228,27 +257,32 @@ def seed_all_data(force: bool = False):
             ("smoke_alarm", True, 0.8, {"sensitivity": "medium"}),
             ("glass_break", False, 0.6, {"sensitivity": "low"}),
         ]
-        for model_key, enabled, threshold, params in model_configs_data:
-            config = ModelConfig(
-                home_id=owner_home.id,
-                model_key=model_key,
-                enabled=enabled,
-                threshold=threshold,
-                params_json=params,
-            )
-            db.add(config)
+        # Add configs for all homes
+        homes_with_configs = [owner_home, owner_home2, admin_home]
+        for home in homes_with_configs:
+            for model_key, enabled, threshold, params in model_configs_data:
+                config = ModelConfig(
+                    home_id=home.id,
+                    model_key=model_key,
+                    enabled=enabled,
+                    threshold=threshold,
+                    params_json=params,
+                )
+                db.add(config)
         db.flush()
-        print(f"   ✅ Created {len(model_configs_data)} model configs")
+        print(f"   ✅ Created {len(model_configs_data) * len(homes_with_configs)} model configs")
 
         # 9. Create Assignments
         print("\n👥 Creating assignments...")
-        assignment = Assignment(
+        # Technician assigned to owner_home
+        tech_assignment = Assignment(
             user_id=tech_user.id,
             home_id=owner_home.id,
             role="technician",
         )
-        db.add(assignment)
+        db.add(tech_assignment)
 
+        # Staff assigned to owner_home
         staff_assignment = Assignment(
             user_id=staff_user.id,
             home_id=owner_home.id,
@@ -256,15 +290,16 @@ def seed_all_data(force: bool = False):
         )
         db.add(staff_assignment)
         db.flush()
-        print("   ✅ Created 2 assignments")
+        print("   ✅ Created 2 assignments (tech and staff to owner_home)")
 
         db.commit()
         print("\n✅ Successfully seeded all data!")
         print("\n📋 Login Credentials:")
-        print("   - admin@gmail.com / admin123 (admin)")
-        print("   - owner@example.com / owner123 (owner)")
-        print("   - tech@example.com / tech123 (technician)")
-        print("   - staff@example.com / staff123 (staff)")
+        print("   - admin@gmail.com / admin123 (admin) → Admin Home")
+        print("   - owner@example.com / owner123 (owner) → Owner Home")
+        print("   - owner2@example.com / owner123 (owner) → Owner 2 Home")
+        print("   - tech@example.com / tech123 (technician) → assigned to Owner Home")
+        print("   - staff@example.com / staff123 (staff) → assigned to Owner Home")
 
     except Exception as e:
         db.rollback()

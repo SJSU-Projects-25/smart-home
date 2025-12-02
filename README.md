@@ -32,22 +32,43 @@ This project consists of three main components:
 
 ## Quick Start
 
-### One-Command Setup
+### First-Time Setup
 
-Run the setup script to start all services and configure the environment:
+Run the setup script to build images and start all services:
 
 ```bash
 ./setup-local.sh
 ```
 
 This script will:
-1. Start all Docker services (Postgres, MongoDB, LocalStack, API, Worker, Frontend)
-2. Wait for services to be ready
-3. Create SQS queue (`ingest-queue`)
-4. Create S3 bucket (`smart-home-audio`)
-5. Configure CORS for S3 bucket
-6. Run database migrations
-7. Seed initial data (users, homes, devices, alerts, etc.)
+1. Build Docker images (first time only, or use `--build` flag to rebuild)
+2. Start all Docker services (Postgres, MongoDB, LocalStack, API, Worker, Frontend)
+3. Wait for services to be ready
+4. Create SQS queue (`ingest-queue`)
+5. Create S3 bucket (`smart-home-audio`)
+6. Configure CORS for S3 bucket
+7. Run database migrations
+8. Seed initial data (users, homes, devices, alerts, etc.)
+
+### Daily Development (Hot Reload Enabled)
+
+For subsequent runs, use the quick start script (no rebuild, instant startup):
+
+```bash
+./quick-start.sh
+```
+
+**Hot Reload Features:**
+- ✅ Backend changes in `./backend` automatically reload (FastAPI --reload)
+- ✅ Frontend changes in `./frontend` automatically reload (Next.js dev mode)
+- ✅ No need to rebuild Docker images unless Dockerfile changes
+- ✅ Single command to start everything
+
+**When to rebuild:**
+- First time setup
+- After changing Dockerfiles
+- After adding new system dependencies
+- Use: `./setup-local.sh --build`
 
 ### Manual Setup
 

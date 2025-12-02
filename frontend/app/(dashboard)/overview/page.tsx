@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
+import { useRouter } from "next/navigation";
 import { Typography, Box, Card, CardContent, List, ListItem, ListItemText, Chip, Paper } from "@mui/material";
 import { KpiCard } from "@/src/components/KpiCard";
 import { useListAlertsQuery } from "@/src/api/alerts";
@@ -14,9 +15,17 @@ import dayjs from "dayjs";
 export const dynamic = "force-dynamic";
 
 export default function OverviewPage() {
+  const router = useRouter();
   const user = useSelector((state: RootState) => state.auth.user);
   const homeId = user?.home_id;
   const [recentAlerts, setRecentAlerts] = useState<Alert[]>([]);
+
+  // Redirect if no home assigned
+  useEffect(() => {
+    if (user && !homeId) {
+      router.push("/no-home");
+    }
+  }, [user, homeId, router]);
 
   // WebSocket subscription for live alerts
   useAlertsWS(homeId);
@@ -47,17 +56,9 @@ export default function OverviewPage() {
   const onlineDevicesCount = devices.filter((d) => d.status === "online").length;
   const totalDevicesCount = devices.length;
 
+  // Don't render if no homeId (will redirect)
   if (!homeId) {
-    return (
-      <Box>
-        <Typography variant="h4" gutterBottom>
-          Overview
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          No home associated with your account. Please contact support.
-        </Typography>
-      </Box>
-    );
+    return null;
   }
 
   const getSeverityColor = (severity: string) => {

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
+import { useRouter } from "next/navigation";
 import {
   Typography,
   Box,
@@ -22,12 +23,20 @@ export const dynamic = "force-dynamic";
 const MODEL_KEYS = ["scream", "smoke_alarm", "glass_break"];
 
 export default function ModelsPage() {
+  const router = useRouter();
   const user = useSelector((state: RootState) => state.auth.user);
   const homeId = user?.home_id;
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string }>({
     open: false,
     message: "",
   });
+
+  // Redirect if no home assigned
+  useEffect(() => {
+    if (user && !homeId) {
+      router.push("/no-home");
+    }
+  }, [user, homeId, router]);
 
   const { data: configs, isLoading } = useListModelConfigsQuery(
     { home_id: homeId || "" },
@@ -53,17 +62,9 @@ export default function ModelsPage() {
     }
   };
 
+  // Don't render if no homeId (will redirect)
   if (!homeId) {
-    return (
-      <Box>
-        <Typography variant="h4" gutterBottom>
-          Detection Models
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          No home associated with your account. Please contact support.
-        </Typography>
-      </Box>
-    );
+    return null;
   }
 
   return (

@@ -19,8 +19,30 @@ else
     COMPOSE_CMD="docker-compose"
 fi
 
+# Check for --build flag or --rebuild flag
+BUILD_FLAG=""
+NEEDS_BUILD=false
+
+if [[ "$1" == "--build" ]] || [[ "$1" == "--rebuild" ]]; then
+    BUILD_FLAG="--build"
+    NEEDS_BUILD=true
+    echo "🔨 Building Docker images (this may take a while)..."
+else
+    # Check if images exist
+    echo "🔍 Checking for existing Docker images..."
+    if ! docker images | grep -q "smart-home.*api" || ! docker images | grep -q "smart-home.*frontend"; then
+        echo "⚠️  Docker images not found. Building them now (first time setup)..."
+        BUILD_FLAG="--build"
+        NEEDS_BUILD=true
+    else
+        echo "⚡ Quick start mode (using existing images, changes will hot-reload)"
+        echo "   Use --build flag to force rebuild: ./setup-local.sh --build"
+    fi
+fi
+
+echo ""
 echo "📦 Starting Docker Compose services..."
-$COMPOSE_CMD -f docker-compose.local.yml up -d --build
+$COMPOSE_CMD -f docker-compose.local.yml up -d $BUILD_FLAG
 
 echo ""
 echo "⏳ Waiting for services to be ready..."
@@ -110,18 +132,28 @@ echo ""
 echo "✅ Setup complete!"
 echo ""
 echo "📝 Services are running:"
-echo "  - API: http://localhost:8000"
+echo "  - API: http://localhost:8000 (hot reload: changes in ./backend auto-reload)"
+echo "  - Frontend: http://localhost:3000 (hot reload: changes in ./frontend auto-reload)"
 echo "  - API Docs: http://localhost:8000/docs"
 echo "  - Postgres: localhost:5432"
 echo "  - MongoDB: localhost:27017"
 echo "  - LocalStack: http://localhost:4566"
 echo ""
-echo "To view logs: $COMPOSE_CMD -f docker-compose.local.yml logs -f"
-echo "To stop: $COMPOSE_CMD -f docker-compose.local.yml down"
+echo "💡 Development Tips:"
+echo "  - Quick start (no rebuild): ./quick-start.sh"
+echo "  - Force rebuild: ./setup-local.sh --build"
+echo "  - View logs: $COMPOSE_CMD -f docker-compose.local.yml logs -f"
+echo "  - Stop services: $COMPOSE_CMD -f docker-compose.local.yml down"
 echo ""
 echo "📋 Login Credentials (from seed data):"
 echo "  - admin@gmail.com / admin123 (admin)"
 echo "  - owner@example.com / owner123 (owner)"
+echo "  - owner2@example.com / owner123 (owner)"
 echo "  - tech@example.com / tech123 (technician)"
 echo "  - staff@example.com / staff123 (staff)"
+echo ""
+echo "💡 Hot Reload Enabled:"
+echo "  - Backend: Changes in ./backend will auto-reload"
+echo "  - Frontend: Changes in ./frontend will auto-reload"
+echo "  - No need to rebuild unless Dockerfile changes"
 
