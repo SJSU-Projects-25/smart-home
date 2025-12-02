@@ -20,7 +20,7 @@ else
 fi
 
 echo "📦 Starting Docker Compose services..."
-$COMPOSE_CMD -f docker-compose.local.yml up -d
+$COMPOSE_CMD -f docker-compose.local.yml up -d --build
 
 echo ""
 echo "⏳ Waiting for services to be ready..."
