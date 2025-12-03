@@ -30,3 +30,22 @@ export function isAdmin(userRole: UserRole | undefined): boolean {
   return userRole === ROLES.ADMIN;
 }
 
+/**
+ * Get the overview/dashboard path based on user role.
+ * @param role - User role
+ * @returns Path to the role-specific overview page
+ */
+export function getOverviewPath(role: UserRole | undefined): string {
+  switch (role) {
+    case ROLES.TECHNICIAN:
+      return "/tech/overview";
+    case ROLES.STAFF:
+      return "/ops/overview";
+    case ROLES.ADMIN:
+      return "/admin/overview";
+    case ROLES.OWNER:
+    default:
+      return "/overview";
+  }
+}
+

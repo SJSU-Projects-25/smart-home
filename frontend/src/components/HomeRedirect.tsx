@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { RootState } from "../store";
 import { StoreProvider } from "./StoreProvider";
+import { getOverviewPath } from "../utils/roles";
 
 function RedirectLogic() {
   const router = useRouter();
@@ -19,7 +20,8 @@ function RedirectLogic() {
   useEffect(() => {
     if (mounted) {
       if (user) {
-        router.push("/overview");
+        const overviewPath = getOverviewPath(user.role);
+        router.push(overviewPath);
       } else {
         router.push("/login");
       }

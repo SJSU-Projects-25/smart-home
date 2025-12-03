@@ -16,6 +16,7 @@ import {
 import { setCredentials } from "@/src/store/slices/authSlice";
 import { RootState } from "@/src/store";
 import { useLoginMutation } from "@/src/api/auth";
+import { getOverviewPath } from "@/src/utils/roles";
 
 
 export default function LoginPage() {
@@ -34,7 +35,8 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (mounted && user) {
-      router.push("/overview");
+      const overviewPath = getOverviewPath(user.role);
+      router.push(overviewPath);
     }
   }, [mounted, user, router]);
 
@@ -50,7 +52,8 @@ export default function LoginPage() {
     try {
       const response = await login({ email, password }).unwrap();
       dispatch(setCredentials(response));
-      router.push("/overview");
+      const overviewPath = getOverviewPath(response.user.role);
+      router.push(overviewPath);
     } catch (err: any) {
       setError(
         err.data?.detail || err.message || "Login failed. Please check your credentials."

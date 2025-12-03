@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "../store";
-import { UserRole } from "../utils/roles";
+import { UserRole, getOverviewPath } from "../utils/roles";
 
 interface RoleGuardProps {
   children: React.ReactNode;
@@ -24,7 +24,8 @@ export function RoleGuard({ children, allowedRoles, fallback }: RoleGuardProps) 
     }
 
     if (!allowedRoles.includes(user.role)) {
-      router.push("/overview");
+      const overviewPath = getOverviewPath(user.role);
+      router.push(overviewPath);
     }
   }, [user, allowedRoles, router]);
 
