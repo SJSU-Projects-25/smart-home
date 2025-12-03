@@ -11,6 +11,8 @@ from app.db.models import Device
 
 def get_device_network_status(db: Session, settings: Settings, home_id: UUID) -> list[dict]:
     """Get network status for all devices in a home, including RSSI from MongoDB telemetry."""
+    from app.db.models import Room
+    
     devices = db.query(Device).filter(Device.home_id == home_id).all()
     
     # Connect to MongoDB to get latest RSSI data
@@ -26,6 +28,13 @@ def get_device_network_status(db: Session, settings: Settings, home_id: UUID) ->
     result = []
     import random
     for device in devices:
+        # Load room for response
+        room_name = None
+        if device.room_id:
+            room = db.query(Room).filter(Room.id == device.room_id).first()
+            if room:
+                room_name = room.name
+        
         # Try to get latest RSSI from MongoDB
         rssi = None
         if telemetry_collection is not None:
@@ -50,6 +59,9 @@ def get_device_network_status(db: Session, settings: Settings, home_id: UUID) ->
         result.append({
             "device_id": str(device.id),
             "device_name": device.name,
+            "device_type": device.type,
+            "room_id": str(device.room_id) if device.room_id else None,
+            "room_name": room_name,
             "rssi": rssi,
             "last_heartbeat": device.last_seen_at.isoformat() if device.last_seen_at else None,
             "status": device.status,
