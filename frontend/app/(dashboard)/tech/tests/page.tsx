@@ -27,10 +27,10 @@ export default function TechTestsPage() {
   const searchParams = useSearchParams();
   const homeIdFromUrl = searchParams.get("homeId");
   const user = useSelector((state: RootState) => state.auth.user);
-  
+
   // Get home name from assignments
   const { data: assignments } = useListAssignmentsQuery(undefined, { skip: !user });
-  
+
   // Initialize with first assignment if available and no URL/homeId
   const initialHomeId = useMemo(() => {
     if (homeIdFromUrl) return homeIdFromUrl;
@@ -38,9 +38,9 @@ export default function TechTestsPage() {
     if (assignments && assignments.length > 0) return assignments[0].home_id;
     return "";
   }, [homeIdFromUrl, user?.home_id, assignments]);
-  
+
   const [selectedHomeId, setSelectedHomeId] = useState<string>(initialHomeId);
-  
+
   // Find selected home based on selectedHomeId (works for both URL and dropdown selection)
   const selectedHome = useMemo(() => {
     if (!selectedHomeId || !assignments) return null;
@@ -61,38 +61,15 @@ export default function TechTestsPage() {
 
   // Filter out cameras - only show microphones
   // Use case-insensitive matching and handle variations
-  const microphoneDevices = useMemo(() => {
-    const allDevices = devices || [];
-    
-    // Filter to microphones (case-insensitive, handle variations)
-    const microphones = allDevices.filter((device) => {
-      const deviceType = (device.type || "").toLowerCase().trim();
-      return deviceType === "microphone" || deviceType === "mic";
-    });
-    
-    // Debug: log device counts and types for troubleshooting
-    if (allDevices.length > 0) {
-      console.log(`[Tests Page] Total devices: ${allDevices.length}, Microphones: ${microphones.length}`);
-      if (microphones.length !== allDevices.length) {
-        const nonMicrophones = allDevices.filter((device) => {
-          const deviceType = (device.type || "").toLowerCase().trim();
-          return deviceType !== "microphone" && deviceType !== "mic";
-        });
-        console.log(`[Tests Page] Filtered out ${nonMicrophones.length} non-microphone device(s):`, 
-          nonMicrophones.map(d => `${d.name} (type: "${d.type}")`));
-      }
-      // Log all device types found
-      const deviceTypes = [...new Set(allDevices.map(d => d.type))];
-      console.log(`[Tests Page] Device types found:`, deviceTypes);
-    }
-    
-    return microphones;
+  // Show all devices, not just microphones
+  const availableDevices = useMemo(() => {
+    return devices || [];
   }, [devices]);
 
   // Get selected device details
   const selectedDevice = useMemo(() => {
-    return microphoneDevices.find((d) => d.id === selectedDeviceId);
-  }, [microphoneDevices, selectedDeviceId]);
+    return availableDevices.find((d) => d.id === selectedDeviceId);
+  }, [availableDevices, selectedDeviceId]);
 
   const [presignUpload] = usePresignUploadMutation();
   const [confirmUpload] = useConfirmUploadMutation();
@@ -160,9 +137,9 @@ export default function TechTestsPage() {
       }).unwrap();
 
       setJobId(confirmResponse.job_id);
-      setMessage({ 
-        type: "success", 
-        text: `Test uploaded successfully! Job ID: ${confirmResponse.job_id}` 
+      setMessage({
+        type: "success",
+        text: `Test uploaded successfully! Job ID: ${confirmResponse.job_id}`
       });
       setSelectedFile(null);
       setSelectedDeviceId("");
@@ -176,8 +153,8 @@ export default function TechTestsPage() {
     }
   };
 
-  const homeName = selectedHome?.home?.name || 
-    (selectedHomeId && assignments?.find(a => a.home_id === selectedHomeId)?.home?.name) || 
+  const homeName = selectedHome?.home?.name ||
+    (selectedHomeId && assignments?.find(a => a.home_id === selectedHomeId)?.home?.name) ||
     "Unknown Home";
   const availableHomes = assignments || [];
 
@@ -214,10 +191,10 @@ export default function TechTestsPage() {
               </TextField>
               {selectedHomeId && (
                 <Box sx={{ mt: 1, display: "flex", gap: 1, flexWrap: "wrap" }}>
-                  <Chip 
-                    label={`Home: ${homeName}`} 
-                    size="small" 
-                    color="primary" 
+                  <Chip
+                    label={`Home: ${homeName}`}
+                    size="small"
+                    color="primary"
                     variant="outlined"
                   />
                 </Box>
@@ -237,31 +214,31 @@ export default function TechTestsPage() {
                   onChange={(e) => setSelectedDeviceId(e.target.value)}
                   fullWidth
                   required
-                  disabled={!selectedHomeId || microphoneDevices.length === 0}
+                  disabled={!selectedHomeId || availableDevices.length === 0}
                   helperText={
                     !selectedHomeId
                       ? "Please select a home first"
-                      : microphoneDevices.length === 0
-                      ? "No microphone devices found for this home"
-                      : `${microphoneDevices.length} microphone device${microphoneDevices.length !== 1 ? "s" : ""} available`
+                      : availableDevices.length === 0
+                        ? "No devices found for this home"
+                        : `${availableDevices.length} device${availableDevices.length !== 1 ? "s" : ""} available`
                   }
                 >
-                  {microphoneDevices.map((device) => (
+                  {availableDevices.map((device) => (
                     <MenuItem key={device.id} value={device.id}>
                       <Box sx={{ display: "flex", flexDirection: "column", width: "100%" }}>
                         <Typography variant="body1">{device.name}</Typography>
                         <Box sx={{ display: "flex", gap: 1, mt: 0.5 }}>
                           {device.room_name && (
-                            <Chip 
-                              label={`Room: ${device.room_name}`} 
-                              size="small" 
+                            <Chip
+                              label={`Room: ${device.room_name}`}
+                              size="small"
                               variant="outlined"
                               sx={{ fontSize: "0.7rem", height: "20px" }}
                             />
                           )}
-                          <Chip 
-                            label={device.type} 
-                            size="small" 
+                          <Chip
+                            label={device.type}
+                            size="small"
                             color="primary"
                             variant="outlined"
                             sx={{ fontSize: "0.7rem", height: "20px" }}
