@@ -34,7 +34,9 @@ export default function TechOverviewPage() {
     );
   }
 
-  const { data: overview, isLoading, error } = useGetTechOverviewQuery();
+  const { data: overview, isLoading, error } = useGetTechOverviewQuery(undefined, {
+    skip: !user || (user.role !== "technician" && user.role !== "admin"),
+  });
 
   if (isLoading) {
     return (

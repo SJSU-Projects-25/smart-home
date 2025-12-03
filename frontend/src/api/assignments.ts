@@ -10,6 +10,8 @@ export interface Assignment {
     id: string;
     name: string;
     timezone: string;
+    rooms_count?: number;
+    devices_count?: number;
   };
 }
 

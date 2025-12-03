@@ -2,29 +2,22 @@
 
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { Typography, Box, Card, CardContent } from "@mui/material";
+import { Typography, Box, Card, CardContent, Chip, Alert } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
-import { useListDevicesQuery } from "@/src/api/devices";
+import { useGetNetworkStatusQuery } from "@/src/api/network";
 import { RootState } from "@/src/store";
 import dayjs from "dayjs";
 
 export const dynamic = "force-dynamic";
-
-interface NetworkDevice {
-  id: string;
-  name: string;
-  rssi: number | null;
-  last_heartbeat: string | null;
-}
 
 export default function TechNetworkPage() {
   const user = useSelector((state: RootState) => state.auth.user);
   const homeId = user?.home_id;
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const { data: devices, isLoading } = useListDevicesQuery(
+  const { data: networkStatus, isLoading, error } = useGetNetworkStatusQuery(
     { home_id: homeId || "" },
-    { skip: !homeId, refetchOnMountOrArgChange: true }
+    { skip: !homeId || !user, refetchOnMountOrArgChange: true }
   );
 
   // Refresh every 30 seconds
@@ -36,22 +29,34 @@ export default function TechNetworkPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Transform devices to network format
-  // In a real implementation, this would come from a telemetry endpoint
-  const networkDevices: NetworkDevice[] = (devices || []).map((device) => ({
-    id: device.id,
-    name: device.name,
-    rssi: null, // Would come from telemetry endpoint
-    last_heartbeat: device.last_seen_at || null,
-  }));
-
   const columns: GridColDef[] = [
-    { field: "name", headerName: "Device Name", width: 200, flex: 1 },
+    { field: "device_name", headerName: "Device Name", width: 200, flex: 1 },
     {
       field: "rssi",
       headerName: "RSSI",
+      width: 150,
+      renderCell: (params) => {
+        const rssi = params.value as number | null;
+        if (rssi === null) {
+          return <Chip label="N/A" size="small" color="default" />;
+        }
+        let color: "success" | "warning" | "error" = "success";
+        if (rssi < -80) color = "error";
+        else if (rssi < -70) color = "warning";
+        return <Chip label={`${rssi} dBm`} size="small" color={color} />;
+      },
+    },
+    {
+      field: "status",
+      headerName: "Status",
       width: 120,
-      valueGetter: (value) => (value !== null ? `${value} dBm` : "N/A"),
+      renderCell: (params) => (
+        <Chip
+          label={params.value}
+          size="small"
+          color={params.value === "online" ? "success" : "default"}
+        />
+      ),
     },
     {
       field: "last_heartbeat",
@@ -61,7 +66,7 @@ export default function TechNetworkPage() {
     },
   ];
 
-  if (!homeId) {
+  if (!homeId || !user) {
     return (
       <Box>
         <Typography variant="h4" gutterBottom>
@@ -70,6 +75,19 @@ export default function TechNetworkPage() {
         <Typography variant="body1" color="text.secondary">
           No home associated with your account. Please contact support.
         </Typography>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box>
+        <Typography variant="h4" gutterBottom>
+          Device Network Status
+        </Typography>
+        <Alert severity="error" sx={{ mt: 2 }}>
+          Failed to load network status. Please try again later.
+        </Alert>
       </Box>
     );
   }
@@ -87,10 +105,10 @@ export default function TechNetworkPage() {
         <CardContent>
           <DataGrid
             key={refreshKey}
-            rows={networkDevices}
+            rows={networkStatus || []}
             columns={columns}
             loading={isLoading}
-            getRowId={(row) => row.id}
+            getRowId={(row) => row.device_id}
             autoHeight
             pageSizeOptions={[10, 25, 50]}
             initialState={{

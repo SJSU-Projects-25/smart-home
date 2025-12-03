@@ -31,6 +31,14 @@ class Settings(BaseSettings):
     # Frontend
     frontend_origin: str
 
+    # Email/SMTP (optional, for email notifications)
+    smtp_host: str | None = None
+    smtp_port: int | None = None
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    smtp_use_tls: bool = True
+    smtp_from_email: str | None = None
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

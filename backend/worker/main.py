@@ -75,8 +75,16 @@ def process_job(
 
     db_session.add(alert)
     db_session.commit()
+    db_session.refresh(alert)
 
     print(f"Created alert {alert.id} for device {device_id}")
+
+    # Send email notifications for high-severity alerts
+    if decision_result["severity"] == "high":
+        from app.services.email_service import notify_contacts_for_alert
+        notifications_sent = notify_contacts_for_alert(db_session, alert, settings)
+        if notifications_sent > 0:
+            print(f"Sent {notifications_sent} email notification(s) for critical alert {alert.id}")
 
 
 def main_loop(settings: Settings, db_session_factory, events_repo: EventsRepository, model_runner: ModelRunner):

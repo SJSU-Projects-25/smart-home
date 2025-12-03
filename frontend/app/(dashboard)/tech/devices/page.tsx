@@ -48,9 +48,9 @@ export default function TechDevicesPage() {
     severity: "success",
   });
 
-  const { data: devices, isLoading, refetch } = useListDevicesQuery(
+  const { data: devices, isLoading, error, refetch } = useListDevicesQuery(
     { home_id: homeId || "" },
-    { skip: !homeId }
+    { skip: !homeId || !user }
   );
 
   const [createDevice] = useCreateDeviceMutation();
@@ -199,7 +199,7 @@ export default function TechDevicesPage() {
     },
   ];
 
-  if (!homeId) {
+  if (!homeId || !user) {
     return (
       <Box>
         <Typography variant="h4" gutterBottom>
@@ -208,6 +208,19 @@ export default function TechDevicesPage() {
         <Typography variant="body1" color="text.secondary">
           No home associated with your account. Please contact support.
         </Typography>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box>
+        <Typography variant="h4" gutterBottom>
+          Manage Devices
+        </Typography>
+        <Alert severity="error" sx={{ mt: 2 }}>
+          Failed to load devices. Please try again later.
+        </Alert>
       </Box>
     );
   }

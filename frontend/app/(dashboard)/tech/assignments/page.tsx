@@ -2,10 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
-import { Typography, Box, Card, CardContent } from "@mui/material";
+import { Typography, Box, Card, CardContent, Alert, Skeleton } from "@mui/material";
 import { DataGrid, GridColDef, GridRowParams } from "@mui/x-data-grid";
 import { useListAssignmentsQuery } from "@/src/api/assignments";
-import { useListDevicesQuery } from "@/src/api/devices";
 import { RootState } from "@/src/store";
 
 export const dynamic = "force-dynamic";
@@ -14,14 +13,9 @@ export default function TechAssignmentsPage() {
   const router = useRouter();
   const user = useSelector((state: RootState) => state.auth.user);
 
-  // For now, we'll fetch assignments by getting user's home_id from auth
-  // In a real implementation, there would be a GET /assignments endpoint
-  const { data: assignments, isLoading } = useListAssignmentsQuery(undefined, {
-    skip: true, // Skip until backend endpoint is available
+  const { data: assignments, isLoading, error } = useListAssignmentsQuery(undefined, {
+    skip: !user,
   });
-
-  // For now, show a message that assignments will be shown here
-  // When backend implements GET /assignments?user_id=..., we can use it
 
   const handleRowClick = (params: GridRowParams) => {
     const homeId = params.row.home_id;
@@ -30,54 +24,92 @@ export default function TechAssignmentsPage() {
 
   const columns: GridColDef[] = [
     { field: "home_name", headerName: "Home", width: 200, flex: 1 },
-    { field: "rooms_count", headerName: "Rooms", width: 120 },
-    { field: "devices_count", headerName: "Devices", width: 120 },
+    { 
+      field: "rooms_count", 
+      headerName: "Rooms", 
+      width: 120,
+      type: "number",
+    },
+    { 
+      field: "devices_count", 
+      headerName: "Devices", 
+      width: 120,
+      type: "number",
+    },
   ];
+
+  if (isLoading) {
+    return (
+      <>
+        <Typography variant="h4" gutterBottom>
+          My Assigned Homes
+        </Typography>
+        <Card elevation={1} sx={{ mt: 3 }}>
+          <CardContent>
+            <Skeleton variant="rectangular" height={200} />
+          </CardContent>
+        </Card>
+      </>
+    );
+  }
+
+  if (error) {
+    return (
+      <>
+        <Typography variant="h4" gutterBottom>
+          My Assigned Homes
+        </Typography>
+        <Alert severity="error" sx={{ mt: 3 }}>
+          Failed to load assignments. Please try again later.
+        </Alert>
+      </>
+    );
+  }
+
+  // Transform assignments data for DataGrid
+  const rows = (assignments || []).map((assignment) => ({
+    id: assignment.id,
+    home_id: assignment.home_id,
+    home_name: assignment.home?.name || "Unknown Home",
+    rooms_count: assignment.home?.rooms_count || 0,
+    devices_count: assignment.home?.devices_count || 0,
+  }));
 
   return (
     <>
       <Typography variant="h4" gutterBottom>
         My Assigned Homes
       </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+        Click on a home to manage its devices and view details.
+      </Typography>
 
-      <Card elevation={1} sx={{ mt: 3 }}>
+      <Card elevation={1}>
         <CardContent>
-          {user?.home_id ? (
-            <Box>
-              <Typography variant="body1" gutterBottom>
-                You are assigned to home: {user.home_id}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                Click below to manage devices for this home.
-              </Typography>
-              <Box sx={{ mt: 2 }}>
-                <DataGrid
-                  rows={[
-                    {
-                      id: user.home_id,
-                      home_name: "Assigned Home",
-                      rooms_count: "N/A",
-                      devices_count: "N/A",
-                      home_id: user.home_id,
-                    },
-                  ]}
-                  columns={columns}
-                  onRowClick={handleRowClick}
-                  getRowId={(row) => row.id}
-                  sx={{
-                    "& .MuiDataGrid-row": {
-                      cursor: "pointer",
-                    },
-                  }}
-                  autoHeight
-                  hideFooter
-                />
-              </Box>
-            </Box>
-          ) : (
+          {rows.length === 0 ? (
             <Typography variant="body1" color="text.secondary">
               No home assignments found. Please contact your administrator.
             </Typography>
+          ) : (
+            <DataGrid
+              rows={rows}
+              columns={columns}
+              onRowClick={handleRowClick}
+              getRowId={(row) => row.id}
+              loading={isLoading}
+              sx={{
+                "& .MuiDataGrid-row": {
+                  cursor: "pointer",
+                },
+              }}
+              autoHeight
+              pageSizeOptions={[10, 25, 50]}
+              initialState={{
+                pagination: {
+                  paginationModel: { pageSize: 25 },
+                },
+              }}
+            />
           )}
         </CardContent>
       </Card>

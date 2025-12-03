@@ -17,7 +17,11 @@ import {
   IconButton,
   Snackbar,
   Alert,
+  Tooltip,
+  FormHelperText,
+  Chip,
 } from "@mui/material";
+import InfoIcon from "@mui/icons-material/Info";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { DataGrid, GridColDef, GridActionsCellItem } from "@mui/x-data-grid";
@@ -97,8 +101,25 @@ export default function ContactsPage() {
       width: 120,
       valueFormatter: (value: string) => value.toUpperCase(),
     },
-    { field: "value", headerName: "Value", width: 200, flex: 1 },
-    { field: "priority", headerName: "Priority", width: 100 },
+    { field: "value", headerName: "Contact Info", width: 200, flex: 1 },
+    {
+      field: "priority",
+      headerName: "Priority",
+      width: 150,
+      renderCell: (params) => {
+        const priority = params.value as number;
+        let label = "Low";
+        let color: "default" | "warning" | "error" = "default";
+        if (priority >= 2) {
+          label = "High";
+          color = "error";
+        } else if (priority === 1) {
+          label = "Medium";
+          color = "warning";
+        }
+        return <Chip label={`${label} (${priority})`} size="small" color={color} />;
+      },
+    },
     {
       field: "actions",
       type: "actions",
@@ -130,7 +151,12 @@ export default function ContactsPage() {
   return (
     <>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h4">Alert Contacts</Typography>
+        <Box>
+          <Typography variant="h4">Emergency Contacts</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            Configure contacts to receive email notifications for critical (high-severity) alerts
+          </Typography>
+        </Box>
         <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenDialog}>
           Add Contact
         </Button>
@@ -183,13 +209,47 @@ export default function ContactsPage() {
               required
               fullWidth
             />
-            <TextField
-              label="Priority"
-              type="number"
-              value={formData.priority}
-              onChange={(e) => setFormData({ ...formData, priority: parseInt(e.target.value) || 0 })}
-              fullWidth
-            />
+            <Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                <TextField
+                  label="Priority"
+                  type="number"
+                  value={formData.priority}
+                  onChange={(e) => setFormData({ ...formData, priority: parseInt(e.target.value) || 0 })}
+                  fullWidth
+                  inputProps={{ min: 0, max: 3 }}
+                />
+                <Tooltip
+                  title={
+                    <Box>
+                      <Typography variant="body2" sx={{ mb: 1, fontWeight: "bold" }}>
+                        Priority determines notification order:
+                      </Typography>
+                      <Typography variant="body2">• 0 = Low (notified last)</Typography>
+                      <Typography variant="body2">• 1 = Medium (notified second)</Typography>
+                      <Typography variant="body2">• 2+ = High (notified first)</Typography>
+                      <Typography variant="body2" sx={{ mt: 1, fontStyle: "italic" }}>
+                        Higher priority contacts receive notifications first when critical alerts occur.
+                      </Typography>
+                    </Box>
+                  }
+                  arrow
+                  placement="right"
+                >
+                  <IconButton size="small">
+                    <InfoIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+              <FormHelperText>
+                Priority {formData.priority === 0 ? "(Low)" : formData.priority === 1 ? "(Medium)" : "(High)"} - 
+                {formData.priority >= 2
+                  ? " This contact will be notified first for critical alerts"
+                  : formData.priority === 1
+                  ? " This contact will be notified after high-priority contacts"
+                  : " This contact will be notified last"}
+              </FormHelperText>
+            </Box>
           </Box>
         </DialogContent>
         <DialogActions>

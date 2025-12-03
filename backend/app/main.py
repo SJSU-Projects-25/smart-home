@@ -12,6 +12,7 @@ from app.routers import (
     devices,
     ingest,
     models_cfg,
+    network,
     ops,
     owner,
     profile,
@@ -45,6 +46,7 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(users.router)
     app.include_router(assignments.router)
     app.include_router(devices.router)
+    app.include_router(network.router)
     app.include_router(ingest.router)
     app.include_router(alerts.router)
     app.include_router(settings_router.router)

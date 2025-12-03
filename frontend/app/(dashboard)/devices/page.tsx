@@ -12,6 +12,7 @@ import {
   MenuItem,
   TextField,
   Chip,
+  Alert,
 } from "@mui/material";
 import { DataGrid, GridColDef, GridRowParams } from "@mui/x-data-grid";
 import { useListDevicesQuery } from "@/src/api/devices";
@@ -31,12 +32,12 @@ export default function DevicesPage() {
 
   const homeId = user?.home_id;
 
-  const { data: devicesData, isLoading } = useListDevicesQuery(
+  const { data: devicesData, isLoading, error } = useListDevicesQuery(
     {
       home_id: homeId || "",
       status: statusFilter || undefined,
     },
-    { skip: !homeId }
+    { skip: !homeId || !user }
   );
 
   // Client-side filtering for type (backend doesn't support it yet)
@@ -95,7 +96,7 @@ export default function DevicesPage() {
     },
   ];
 
-  if (!homeId) {
+  if (!homeId || !user) {
     return (
       <Box>
         <Typography variant="h4" gutterBottom>
@@ -104,6 +105,19 @@ export default function DevicesPage() {
         <Typography variant="body1" color="text.secondary">
           No home associated with your account. Please contact support.
         </Typography>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box>
+        <Typography variant="h4" gutterBottom>
+          Devices
+        </Typography>
+        <Alert severity="error" sx={{ mt: 2 }}>
+          Failed to load devices. Please try again later.
+        </Alert>
       </Box>
     );
   }
