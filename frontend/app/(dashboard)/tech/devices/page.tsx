@@ -555,7 +555,17 @@ function DeviceConfigDialog({
       }).unwrap();
       onSuccess();
     } catch (error: any) {
-      setError(error.data?.detail || error.message || "Failed to update device configuration");
+      // Normalize different error shapes into a readable string for the Alert
+      const detail =
+        error?.data?.detail ??
+        error?.message ??
+        (Array.isArray(error?.data)
+          ? error.data.map((e: any) => e.msg || JSON.stringify(e)).join("; ")
+          : typeof error?.data === "object"
+          ? JSON.stringify(error.data)
+          : null);
+
+      setError(detail || "Failed to update device configuration");
     }
   };
 
@@ -569,7 +579,7 @@ function DeviceConfigDialog({
       <DialogContent>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
+            {typeof error === "string" ? error : JSON.stringify(error)}
           </Alert>
         )}
         {isLoading ? (
