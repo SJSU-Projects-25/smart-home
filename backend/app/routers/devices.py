@@ -34,7 +34,22 @@ async def list_devices_endpoint(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No home access")
 
     devices = list_devices(db, UUID(validated_home_id), room_id, status)
-    return devices
+    # Convert to response with room names
+    return [
+        DeviceResponse(
+            id=device.id,
+            home_id=device.home_id,
+            room_id=device.room_id,
+            room_name=device.room.name if device.room else None,
+            name=device.name,
+            type=device.type,
+            status=device.status,
+            last_seen_at=device.last_seen_at,
+            firmware_version=device.firmware_version,
+            created_at=device.created_at,
+        )
+        for device in devices
+    ]
 
 
 @router.post("", response_model=DeviceResponse, status_code=status.HTTP_201_CREATED)
@@ -51,7 +66,22 @@ async def create_device_endpoint(
     # Ensure home_id matches validated access
     device_data.home_id = UUID(validated_home_id)
     device = create_device(db, device_data)
-    return device
+    # Load room for response
+    from app.db.models import Room
+    if device.room_id:
+        device.room = db.query(Room).filter(Room.id == device.room_id).first()
+    return DeviceResponse(
+        id=device.id,
+        home_id=device.home_id,
+        room_id=device.room_id,
+        room_name=device.room.name if device.room else None,
+        name=device.name,
+        type=device.type,
+        status=device.status,
+        last_seen_at=device.last_seen_at,
+        firmware_version=device.firmware_version,
+        created_at=device.created_at,
+    )
 
 
 @router.get("/{device_id}", response_model=DeviceResponse)
@@ -70,7 +100,22 @@ async def get_device_endpoint(
     if not validated_home_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
-    return device
+    # Load room for response
+    from app.db.models import Room
+    if device.room_id:
+        device.room = db.query(Room).filter(Room.id == device.room_id).first()
+    return DeviceResponse(
+        id=device.id,
+        home_id=device.home_id,
+        room_id=device.room_id,
+        room_name=device.room.name if device.room else None,
+        name=device.name,
+        type=device.type,
+        status=device.status,
+        last_seen_at=device.last_seen_at,
+        firmware_version=device.firmware_version,
+        created_at=device.created_at,
+    )
 
 
 @router.patch("/{device_id}", response_model=DeviceResponse)
@@ -91,7 +136,22 @@ async def update_device_endpoint(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
     device = update_device(db, device_id, device_data)
-    return device
+    # Load room for response
+    from app.db.models import Room
+    if device.room_id:
+        device.room = db.query(Room).filter(Room.id == device.room_id).first()
+    return DeviceResponse(
+        id=device.id,
+        home_id=device.home_id,
+        room_id=device.room_id,
+        room_name=device.room.name if device.room else None,
+        name=device.name,
+        type=device.type,
+        status=device.status,
+        last_seen_at=device.last_seen_at,
+        firmware_version=device.firmware_version,
+        created_at=device.created_at,
+    )
 
 
 @router.delete("/{device_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -131,4 +191,19 @@ async def heartbeat_device_endpoint(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
     device = heartbeat_device(db, device_id, heartbeat_data.firmware_version)
-    return device
+    # Load room for response
+    from app.db.models import Room
+    if device.room_id:
+        device.room = db.query(Room).filter(Room.id == device.room_id).first()
+    return DeviceResponse(
+        id=device.id,
+        home_id=device.home_id,
+        room_id=device.room_id,
+        room_name=device.room.name if device.room else None,
+        name=device.name,
+        type=device.type,
+        status=device.status,
+        last_seen_at=device.last_seen_at,
+        firmware_version=device.firmware_version,
+        created_at=device.created_at,
+    )

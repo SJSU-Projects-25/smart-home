@@ -100,7 +100,6 @@ export default function AdminDevicesPage() {
             >
               <MenuItem value="">All</MenuItem>
               <MenuItem value="microphone">Microphone</MenuItem>
-              <MenuItem value="camera">Camera</MenuItem>
             </TextField>
           </Stack>
         </CardContent>

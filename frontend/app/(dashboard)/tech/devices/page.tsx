@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { useSelector } from "react-redux";
 import {
   Typography,
@@ -18,12 +19,25 @@ import {
   Tooltip,
   Snackbar,
   Alert,
+  Chip,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import FavoriteIcon from "@mui/icons-material/Favorite";
-import { DataGrid, GridColDef, GridActionsCellItem, GridRowParams } from "@mui/x-data-grid";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { useRouter } from "next/navigation";
 import {
   useListDevicesQuery,
   useCreateDeviceMutation,
@@ -32,14 +46,25 @@ import {
   useHeartbeatDeviceMutation,
   Device,
 } from "@/src/api/devices";
+import { useListAssignmentsQuery } from "@/src/api/assignments";
 import { RootState } from "@/src/store";
 import dayjs from "dayjs";
 
 export const dynamic = "force-dynamic";
 
 export default function TechDevicesPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const homeIdFromUrl = searchParams.get("homeId");
   const user = useSelector((state: RootState) => state.auth.user);
-  const homeId = user?.home_id;
+  
+  // Get home name from assignments
+  const { data: assignments } = useListAssignmentsQuery(undefined, { skip: !user });
+  const selectedHome = useMemo(() => {
+    if (!homeIdFromUrl || !assignments) return null;
+    return assignments.find((a) => a.home_id === homeIdFromUrl);
+  }, [homeIdFromUrl, assignments]);
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingDevice, setEditingDevice] = useState<Device | null>(null);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
@@ -47,6 +72,9 @@ export default function TechDevicesPage() {
     message: "",
     severity: "success",
   });
+
+  // Use homeId from URL if available, otherwise fall back to user's home_id
+  const homeId = homeIdFromUrl || user?.home_id;
 
   const { data: devices, isLoading, error, refetch } = useListDevicesQuery(
     { home_id: homeId || "" },
@@ -63,6 +91,30 @@ export default function TechDevicesPage() {
     type: "microphone",
     room_id: "",
   });
+
+  // Group devices by room
+  const devicesByRoom = useMemo(() => {
+    if (!devices) return {};
+    const grouped: Record<string, Device[]> = {};
+    const unassigned: Device[] = [];
+
+    devices.forEach((device) => {
+      if (device.room_id && device.room_name) {
+        if (!grouped[device.room_id]) {
+          grouped[device.room_id] = [];
+        }
+        grouped[device.room_id].push(device);
+      } else {
+        unassigned.push(device);
+      }
+    });
+
+    if (unassigned.length > 0) {
+      grouped["unassigned"] = unassigned;
+    }
+
+    return grouped;
+  }, [devices]);
 
   const handleOpenDialog = (device?: Device) => {
     if (device) {
@@ -133,72 +185,6 @@ export default function TechDevicesPage() {
     }
   };
 
-  const columns: GridColDef[] = [
-    { field: "name", headerName: "Name", width: 200, flex: 1 },
-      {
-        field: "type",
-        headerName: "Type",
-        width: 150,
-        valueFormatter: (value: string) =>
-          value
-            .split("_")
-            .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(" "),
-      },
-    { field: "room_id", headerName: "Room", width: 150, valueGetter: (value) => value || "N/A" },
-    {
-      field: "status",
-      headerName: "Status",
-      width: 120,
-      renderCell: (params) => (
-        <Box
-          sx={{
-            color: params.value === "online" ? "success.main" : "text.secondary",
-            fontWeight: params.value === "online" ? "bold" : "normal",
-          }}
-        >
-          {params.value}
-        </Box>
-      ),
-    },
-      {
-        field: "last_seen_at",
-        headerName: "Last Seen",
-        width: 180,
-        valueFormatter: (value: string | null | undefined) => (value ? dayjs(value).format("MMM D, YYYY h:mm A") : "Never"),
-      },
-    {
-      field: "actions",
-      type: "actions",
-      headerName: "Actions",
-      width: 200,
-      getActions: (params: GridRowParams) => {
-        const device = params.row as Device;
-        return [
-          <GridActionsCellItem
-            icon={
-              <Tooltip title="Heartbeat Test">
-                <FavoriteIcon />
-              </Tooltip>
-            }
-            label="Heartbeat"
-            onClick={() => handleHeartbeat(device.id)}
-          />,
-          <GridActionsCellItem
-            icon={<EditIcon />}
-            label="Edit"
-            onClick={() => handleOpenDialog(device)}
-          />,
-          <GridActionsCellItem
-            icon={<DeleteIcon />}
-            label="Delete"
-            onClick={() => handleDelete(device.id)}
-          />,
-        ];
-      },
-    },
-  ];
-
   if (!homeId || !user) {
     return (
       <Box>
@@ -206,7 +192,7 @@ export default function TechDevicesPage() {
           Manage Devices
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          No home associated with your account. Please contact support.
+          {homeIdFromUrl ? "No access to this home." : "No home associated with your account. Please contact support."}
         </Typography>
       </Box>
     );
@@ -225,32 +211,139 @@ export default function TechDevicesPage() {
     );
   }
 
+  const homeName = selectedHome?.home?.name || "Unknown Home";
+
   return (
     <>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h4">Manage Devices</Typography>
+        <Box>
+          {homeIdFromUrl && (
+            <Button
+              startIcon={<ArrowBackIcon />}
+              onClick={() => router.push("/tech/assignments")}
+              sx={{ mb: 1 }}
+            >
+              Back to Assignments
+            </Button>
+          )}
+          <Typography variant="h4">
+            {homeIdFromUrl ? `Devices - ${homeName}` : "Manage Devices"}
+          </Typography>
+          {homeIdFromUrl && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              Viewing devices for {homeName}
+            </Typography>
+          )}
+        </Box>
         <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenDialog()}>
           Add Device
         </Button>
       </Box>
 
-      <Card elevation={1}>
-        <CardContent>
-          <DataGrid
-            rows={devices || []}
-            columns={columns}
-            loading={isLoading}
-            getRowId={(row) => row.id}
-            autoHeight
-            pageSizeOptions={[10, 25, 50]}
-            initialState={{
-              pagination: {
-                paginationModel: { pageSize: 25 },
-              },
-            }}
-          />
-        </CardContent>
-      </Card>
+      {isLoading ? (
+        <Card elevation={1}>
+          <CardContent>
+            <Typography>Loading devices...</Typography>
+          </CardContent>
+        </Card>
+      ) : devices && devices.length === 0 ? (
+        <Card elevation={1}>
+          <CardContent>
+            <Typography variant="body1" color="text.secondary" align="center" sx={{ py: 4 }}>
+              No devices found for this home.
+            </Typography>
+          </CardContent>
+        </Card>
+      ) : (
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          {Object.entries(devicesByRoom).map(([roomId, roomDevices]) => {
+            const roomName = roomId === "unassigned" 
+              ? "Unassigned Devices" 
+              : roomDevices[0]?.room_name || "Unknown Room";
+            const deviceCount = roomDevices.length;
+
+            return (
+              <Accordion key={roomId} defaultExpanded>
+                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 2, width: "100%" }}>
+                    <Typography variant="h6">{roomName}</Typography>
+                    <Chip label={`${deviceCount} device${deviceCount !== 1 ? "s" : ""}`} size="small" />
+                  </Box>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <TableContainer component={Paper} variant="outlined">
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Name</TableCell>
+                          <TableCell>Type</TableCell>
+                          <TableCell>Status</TableCell>
+                          <TableCell>Last Seen</TableCell>
+                          <TableCell align="right">Actions</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {roomDevices.map((device) => (
+                          <TableRow key={device.id} hover>
+                            <TableCell>{device.name}</TableCell>
+                            <TableCell>
+                              {device.type
+                                .split("_")
+                                .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                                .join(" ")}
+                            </TableCell>
+                            <TableCell>
+                              <Chip
+                                label={device.status}
+                                color={device.status === "online" ? "success" : "default"}
+                                size="small"
+                              />
+                            </TableCell>
+                            <TableCell>
+                              {device.last_seen_at
+                                ? dayjs(device.last_seen_at).format("MMM D, YYYY h:mm A")
+                                : "Never"}
+                            </TableCell>
+                            <TableCell align="right">
+                              <Tooltip title="Heartbeat Test">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleHeartbeat(device.id)}
+                                  color="primary"
+                                >
+                                  <FavoriteIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Edit">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleOpenDialog(device)}
+                                  color="primary"
+                                >
+                                  <EditIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Delete">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleDelete(device.id)}
+                                  color="error"
+                                >
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </AccordionDetails>
+              </Accordion>
+            );
+          })}
+        </Box>
+      )}
 
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <DialogTitle>{editingDevice ? "Edit Device" : "Add Device"}</DialogTitle>
@@ -273,7 +366,6 @@ export default function TechDevicesPage() {
                 fullWidth
               >
                 <MenuItem value="microphone">Microphone</MenuItem>
-                <MenuItem value="camera">Camera</MenuItem>
               </TextField>
             )}
             <TextField
@@ -281,6 +373,7 @@ export default function TechDevicesPage() {
               value={formData.room_id}
               onChange={(e) => setFormData({ ...formData, room_id: e.target.value })}
               fullWidth
+              helperText="Enter the room UUID to assign this device to a room"
             />
           </Box>
         </DialogContent>

@@ -71,10 +71,10 @@ export default function DevicesPage() {
           .join(" "),
     },
     {
-      field: "room_id",
+      field: "room_name",
       headerName: "Room",
       width: 150,
-      valueGetter: (value) => value || "N/A",
+      valueGetter: (value, row) => row.room_name || row.room_id || "N/A",
     },
     {
       field: "status",
@@ -154,7 +154,6 @@ export default function DevicesPage() {
           >
             <MenuItem value="">All</MenuItem>
             <MenuItem value="microphone">Microphone</MenuItem>
-            <MenuItem value="camera">Camera</MenuItem>
           </TextField>
         </Stack>
       </Paper>

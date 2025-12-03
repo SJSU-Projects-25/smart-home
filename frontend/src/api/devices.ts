@@ -5,6 +5,7 @@ export interface Device {
   id: string;
   home_id: string;
   room_id?: string;
+  room_name?: string; // Room name for display
   name: string;
   type: string;
   status: "online" | "offline";

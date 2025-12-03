@@ -14,6 +14,8 @@ def list_devices(
     db: Session, home_id: UUID, room_id: Optional[UUID] = None, status_filter: Optional[str] = None
 ) -> list[Device]:
     """List devices for a home, optionally filtered by room and status."""
+    from app.db.models import Room
+    
     query = db.query(Device).filter(Device.home_id == home_id)
 
     if room_id:
@@ -21,7 +23,14 @@ def list_devices(
     if status_filter:
         query = query.filter(Device.status == status_filter)
 
-    return query.all()
+    devices = query.all()
+    
+    # Eagerly load room relationships for better performance
+    for device in devices:
+        if device.room_id:
+            device.room = db.query(Room).filter(Room.id == device.room_id).first()
+    
+    return devices
 
 
 def get_device(db: Session, device_id: UUID) -> Optional[Device]:

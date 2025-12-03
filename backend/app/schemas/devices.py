@@ -32,6 +32,7 @@ class DeviceResponse(BaseModel):
     id: UUID
     home_id: UUID
     room_id: Optional[UUID]
+    room_name: Optional[str] = None  # Room name for display
     name: str
     type: str
     status: str
