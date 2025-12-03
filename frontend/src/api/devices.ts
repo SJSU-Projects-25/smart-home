@@ -79,6 +79,28 @@ export const devicesApi = api.injectEndpoints({
       }),
       invalidatesTags: (result, error, deviceId) => [{ type: "Device", id: deviceId }, "Device"],
     }),
+    disableDevice: builder.mutation<Device, string>({
+      query: (deviceId) => ({
+        url: `/devices/${deviceId}/disable`,
+        method: "POST",
+      }),
+      invalidatesTags: (result, error, deviceId) => [
+        { type: "Device", id: deviceId },
+        "Device",
+        { type: "DeviceConfiguration", id: deviceId },
+      ],
+    }),
+    enableDevice: builder.mutation<Device, string>({
+      query: (deviceId) => ({
+        url: `/devices/${deviceId}/enable`,
+        method: "POST",
+      }),
+      invalidatesTags: (result, error, deviceId) => [
+        { type: "Device", id: deviceId },
+        "Device",
+        { type: "DeviceConfiguration", id: deviceId },
+      ],
+    }),
   }),
 });
 
@@ -89,5 +111,7 @@ export const {
   useUpdateDeviceMutation,
   useDeleteDeviceMutation,
   useHeartbeatDeviceMutation,
+  useDisableDeviceMutation,
+  useEnableDeviceMutation,
 } = devicesApi;
 

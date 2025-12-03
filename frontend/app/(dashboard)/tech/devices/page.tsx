@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSelector } from "react-redux";
 import {
@@ -37,6 +37,12 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import SettingsIcon from "@mui/icons-material/Settings";
+import BlockIcon from "@mui/icons-material/Block";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import Switch from "@mui/material/Switch";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import InputAdornment from "@mui/material/InputAdornment";
 import { useRouter } from "next/navigation";
 import {
   useListDevicesQuery,
@@ -44,8 +50,14 @@ import {
   useUpdateDeviceMutation,
   useDeleteDeviceMutation,
   useHeartbeatDeviceMutation,
+  useDisableDeviceMutation,
+  useEnableDeviceMutation,
   Device,
 } from "@/src/api/devices";
+import {
+  useGetDeviceConfigQuery,
+  useUpdateDeviceConfigMutation,
+} from "@/src/api/deviceConfig";
 import { useListAssignmentsQuery } from "@/src/api/assignments";
 import { RootState } from "@/src/store";
 import dayjs from "dayjs";
@@ -66,6 +78,8 @@ export default function TechDevicesPage() {
   }, [homeIdFromUrl, assignments]);
 
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [configDialogOpen, setConfigDialogOpen] = useState(false);
+  const [configuringDevice, setConfiguringDevice] = useState<Device | null>(null);
   const [editingDevice, setEditingDevice] = useState<Device | null>(null);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
     open: false,
@@ -85,6 +99,9 @@ export default function TechDevicesPage() {
   const [updateDevice] = useUpdateDeviceMutation();
   const [deleteDevice] = useDeleteDeviceMutation();
   const [heartbeatDevice] = useHeartbeatDeviceMutation();
+  const [disableDevice] = useDisableDeviceMutation();
+  const [enableDevice] = useEnableDeviceMutation();
+  const [updateDeviceConfig] = useUpdateDeviceConfigMutation();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -180,8 +197,50 @@ export default function TechDevicesPage() {
       await heartbeatDevice(deviceId).unwrap();
       setSnackbar({ open: true, message: "Heartbeat sent successfully", severity: "success" });
       refetch();
-    } catch (error) {
-      setSnackbar({ open: true, message: "Failed to send heartbeat", severity: "error" });
+    } catch (error: any) {
+      setSnackbar({ 
+        open: true, 
+        message: error.data?.detail || "Failed to send heartbeat", 
+        severity: "error" 
+      });
+    }
+  };
+
+  const handleOpenConfigDialog = (device: Device) => {
+    setConfiguringDevice(device);
+    setConfigDialogOpen(true);
+  };
+
+  const handleCloseConfigDialog = () => {
+    setConfigDialogOpen(false);
+    setConfiguringDevice(null);
+  };
+
+  const handleDisable = async (deviceId: string) => {
+    try {
+      await disableDevice(deviceId).unwrap();
+      setSnackbar({ open: true, message: "Device disabled successfully", severity: "success" });
+      refetch();
+    } catch (error: any) {
+      setSnackbar({ 
+        open: true, 
+        message: error.data?.detail || "Failed to disable device", 
+        severity: "error" 
+      });
+    }
+  };
+
+  const handleEnable = async (deviceId: string) => {
+    try {
+      await enableDevice(deviceId).unwrap();
+      setSnackbar({ open: true, message: "Device enabled successfully", severity: "success" });
+      refetch();
+    } catch (error: any) {
+      setSnackbar({ 
+        open: true, 
+        message: error.data?.detail || "Failed to enable device", 
+        severity: "error" 
+      });
     }
   };
 
@@ -314,6 +373,28 @@ export default function TechDevicesPage() {
                                   <FavoriteIcon fontSize="small" />
                                 </IconButton>
                               </Tooltip>
+                              <Tooltip title="Configure">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleOpenConfigDialog(device)}
+                                  color="primary"
+                                >
+                                  <SettingsIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title={device.status === "offline" ? "Enable Device" : "Disable Device"}>
+                                <IconButton
+                                  size="small"
+                                  onClick={() => device.status === "offline" ? handleEnable(device.id) : handleDisable(device.id)}
+                                  color={device.status === "offline" ? "success" : "warning"}
+                                >
+                                  {device.status === "offline" ? (
+                                    <CheckCircleIcon fontSize="small" />
+                                  ) : (
+                                    <BlockIcon fontSize="small" />
+                                  )}
+                                </IconButton>
+                              </Tooltip>
                               <Tooltip title="Edit">
                                 <IconButton
                                   size="small"
@@ -385,6 +466,19 @@ export default function TechDevicesPage() {
         </DialogActions>
       </Dialog>
 
+      {configuringDevice && (
+        <DeviceConfigDialog
+          device={configuringDevice}
+          open={configDialogOpen}
+          onClose={handleCloseConfigDialog}
+          onSuccess={() => {
+            setSnackbar({ open: true, message: "Device configuration updated successfully", severity: "success" });
+            refetch();
+            handleCloseConfigDialog();
+          }}
+        />
+      )}
+
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
@@ -402,3 +496,142 @@ export default function TechDevicesPage() {
     </>
   );
 }
+
+// Device Configuration Dialog Component
+function DeviceConfigDialog({
+  device,
+  open,
+  onClose,
+  onSuccess,
+}: {
+  device: Device;
+  open: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const { data: config, isLoading, error: configError } = useGetDeviceConfigQuery(device.id, { skip: !open });
+  const [updateConfig] = useUpdateDeviceConfigMutation();
+  const [error, setError] = useState<string | null>(null);
+  
+  const [formData, setFormData] = useState({
+    heartbeat_timeout_seconds: 86400, // Default 24h for demo
+    enabled: true,
+    notes: "",
+  });
+
+  // Update form when config loads
+  React.useEffect(() => {
+    if (config) {
+      setFormData({
+        heartbeat_timeout_seconds: config.heartbeat_timeout_seconds,
+        enabled: config.enabled,
+        notes: config.notes || "",
+      });
+      setError(null);
+    }
+  }, [config]);
+
+  // Handle config load error
+  React.useEffect(() => {
+    if (configError) {
+      setError("Failed to load device configuration");
+    }
+  }, [configError]);
+
+  const handleSubmit = async () => {
+    setError(null);
+    try {
+      await updateConfig({
+        deviceId: device.id,
+        data: {
+          heartbeat_timeout_seconds: formData.heartbeat_timeout_seconds,
+          enabled: formData.enabled,
+          notes: formData.notes || undefined,
+        },
+      }).unwrap();
+      onSuccess();
+    } catch (error: any) {
+      setError(error.data?.detail || error.message || "Failed to update device configuration");
+    }
+  };
+
+  const timeoutMinutes = Math.floor(formData.heartbeat_timeout_seconds / 60);
+  const timeoutHours = Math.floor(timeoutMinutes / 60);
+  const timeoutDays = Math.floor(timeoutHours / 24);
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle>Configure Device: {device.name}</DialogTitle>
+      <DialogContent>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+        {isLoading ? (
+          <Box sx={{ py: 3, textAlign: "center" }}>
+            <Typography>Loading configuration...</Typography>
+          </Box>
+        ) : (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 3, pt: 2 }}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={formData.enabled}
+                  onChange={(e) => setFormData({ ...formData, enabled: e.target.checked })}
+                />
+              }
+              label="Device Enabled"
+            />
+            <Typography variant="body2" color="text.secondary">
+              When disabled, the device will be marked offline and cannot receive heartbeats.
+            </Typography>
+
+            <TextField
+              label="Heartbeat Timeout"
+              type="number"
+              value={formData.heartbeat_timeout_seconds}
+              onChange={(e) => {
+                const value = parseInt(e.target.value) || 300;
+                setFormData({ ...formData, heartbeat_timeout_seconds: value });
+              }}
+              InputProps={{
+                endAdornment: <InputAdornment position="end">seconds</InputAdornment>,
+              }}
+              helperText={
+                timeoutDays > 0
+                  ? `≈ ${timeoutDays} day${timeoutDays !== 1 ? "s" : ""} (${timeoutHours} hours)`
+                  : timeoutHours > 0
+                  ? `≈ ${timeoutHours} hour${timeoutHours !== 1 ? "s" : ""} (${timeoutMinutes} minutes)`
+                  : `≈ ${timeoutMinutes} minute${timeoutMinutes !== 1 ? "s" : ""}`
+              }
+              fullWidth
+              inputProps={{ min: 30, max: 86400 }}
+            />
+            <Typography variant="body2" color="text.secondary">
+              Device will be marked offline if no heartbeat is received within this time. 
+              Default: 5 minutes (300s). For demo: 24 hours (86400s).
+            </Typography>
+
+            <TextField
+              label="Notes (optional)"
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              multiline
+              rows={3}
+              fullWidth
+              placeholder="Add any notes about this device configuration..."
+            />
+          </Box>
+        )}
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={handleSubmit} variant="contained" disabled={isLoading}>
+          Save Configuration
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+

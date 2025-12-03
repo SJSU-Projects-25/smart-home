@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.db.models import Device
 from app.schemas.devices import DeviceCreate, DeviceUpdate
+from app.services.device_config_service import check_device_online_status
 
 
 def list_devices(
@@ -29,13 +30,20 @@ def list_devices(
     for device in devices:
         if device.room_id:
             device.room = db.query(Room).filter(Room.id == device.room_id).first()
+        
+        # Check device online status based on heartbeat timeout
+        check_device_online_status(db, device)
     
     return devices
 
 
 def get_device(db: Session, device_id: UUID) -> Optional[Device]:
     """Get a device by ID."""
-    return db.query(Device).filter(Device.id == device_id).first()
+    device = db.query(Device).filter(Device.id == device_id).first()
+    if device:
+        # Check device online status based on heartbeat timeout
+        check_device_online_status(db, device)
+    return device
 
 
 def create_device(db: Session, device_data: DeviceCreate) -> Device:

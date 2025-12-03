@@ -1,4 +1,5 @@
 """Devices router."""
+from datetime import datetime
 from typing import Annotated, Optional
 from uuid import UUID
 
@@ -190,7 +191,125 @@ async def heartbeat_device_endpoint(
     if not validated_home_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
+    # Check if device is enabled
+    from app.services.device_config_service import get_device_configuration
+    config = get_device_configuration(db, device_id)
+    if config and not config.enabled:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Device is disabled and cannot receive heartbeats",
+        )
+
     device = heartbeat_device(db, device_id, heartbeat_data.firmware_version)
+    # Load room for response
+    from app.db.models import Room
+    if device.room_id:
+        device.room = db.query(Room).filter(Room.id == device.room_id).first()
+    return DeviceResponse(
+        id=device.id,
+        home_id=device.home_id,
+        room_id=device.room_id,
+        room_name=device.room.name if device.room else None,
+        name=device.name,
+        type=device.type,
+        status=device.status,
+        last_seen_at=device.last_seen_at,
+        firmware_version=device.firmware_version,
+        created_at=device.created_at,
+    )
+
+
+@router.post("/{device_id}/disable", response_model=DeviceResponse)
+async def disable_device_endpoint(
+    device_id: UUID,
+    current_user: Annotated[User, Depends(get_current_user)] = None,
+    db: Annotated[Session, Depends(get_db)] = None,
+):
+    """Disable a device. Requires technician or admin role."""
+    if current_user.role not in ["technician", "admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only technicians and admins can disable devices",
+        )
+
+    device = get_device(db, device_id)
+    if not device:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Device not found")
+
+    # Validate home access
+    _, validated_home_id = get_user_home_access(current_user, db, str(device.home_id))
+    if not validated_home_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
+    # Disable device via configuration
+    from app.services.device_config_service import get_or_create_device_configuration
+    from app.schemas.device_config import DeviceConfigUpdate
+    
+    config = get_or_create_device_configuration(db, device_id, default_timeout=86400)
+    config.enabled = False
+    config.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(config)
+    
+    # Mark device as offline
+    device.status = "offline"
+    db.commit()
+    db.refresh(device)
+    
+    # Load room for response
+    from app.db.models import Room
+    if device.room_id:
+        device.room = db.query(Room).filter(Room.id == device.room_id).first()
+    return DeviceResponse(
+        id=device.id,
+        home_id=device.home_id,
+        room_id=device.room_id,
+        room_name=device.room.name if device.room else None,
+        name=device.name,
+        type=device.type,
+        status=device.status,
+        last_seen_at=device.last_seen_at,
+        firmware_version=device.firmware_version,
+        created_at=device.created_at,
+    )
+
+
+@router.post("/{device_id}/enable", response_model=DeviceResponse)
+async def enable_device_endpoint(
+    device_id: UUID,
+    current_user: Annotated[User, Depends(get_current_user)] = None,
+    db: Annotated[Session, Depends(get_db)] = None,
+):
+    """Enable a device. Requires technician or admin role."""
+    if current_user.role not in ["technician", "admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only technicians and admins can enable devices",
+        )
+
+    device = get_device(db, device_id)
+    if not device:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Device not found")
+
+    # Validate home access
+    _, validated_home_id = get_user_home_access(current_user, db, str(device.home_id))
+    if not validated_home_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
+    # Enable device via configuration
+    from app.services.device_config_service import get_or_create_device_configuration
+    
+    config = get_or_create_device_configuration(db, device_id, default_timeout=86400)
+    config.enabled = True
+    config.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(config)
+    
+    # Check if device should be online based on heartbeat
+    from app.services.device_config_service import check_device_online_status
+    check_device_online_status(db, device)
+    db.refresh(device)
+    
     # Load room for response
     from app.db.models import Room
     if device.room_id:

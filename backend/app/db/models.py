@@ -151,6 +151,9 @@ class Device(Base):
     home: Mapped["Home"] = relationship("Home", back_populates="devices")
     room: Mapped["Room | None"] = relationship("Room", back_populates="devices")
     alerts: Mapped[list["Alert"]] = relationship("Alert", back_populates="device")
+    configuration: Mapped["DeviceConfiguration | None"] = relationship(
+        "DeviceConfiguration", back_populates="device", uselist=False
+    )
 
 
 class Alert(Base):
@@ -289,3 +292,35 @@ class Assignment(Base):
     # Relationships
     user: Mapped["User"] = relationship("User", back_populates="assignments")
     home: Mapped["Home"] = relationship("Home", back_populates="assignments")
+
+
+class DeviceConfiguration(Base):
+    """Device configuration model for technician settings."""
+
+    __tablename__ = "device_configurations"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    device_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("devices.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+    heartbeat_timeout_seconds: Mapped[int] = mapped_column(Integer, nullable=False, default=300)  # Default 5 minutes
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+    # Relationships
+    device: Mapped["Device"] = relationship("Device", back_populates="configuration")

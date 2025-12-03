@@ -9,6 +9,7 @@ from app.routers import (
     alerts,
     assignments,
     auth,
+    device_config,
     devices,
     ingest,
     models_cfg,
@@ -46,6 +47,7 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(users.router)
     app.include_router(assignments.router)
     app.include_router(devices.router)
+    app.include_router(device_config.router)
     app.include_router(network.router)
     app.include_router(ingest.router)
     app.include_router(alerts.router)
