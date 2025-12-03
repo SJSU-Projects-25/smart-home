@@ -86,9 +86,17 @@ def update_device(db: Session, device_id: UUID, device_data: DeviceUpdate) -> De
 
 def delete_device(db: Session, device_id: UUID) -> None:
     """Delete a device."""
-    device = get_device(db, device_id)
+    # Fetch device directly without triggering heartbeat/config side effects
+    device = db.query(Device).filter(Device.id == device_id).first()
     if not device:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Device not found")
+
+    # Clean up related configuration explicitly (defensive against FK issues)
+    from app.db.models import DeviceConfiguration
+
+    db.query(DeviceConfiguration).filter(DeviceConfiguration.device_id == device_id).delete(
+        synchronize_session=False
+    )
 
     db.delete(device)
     db.commit()

@@ -94,7 +94,12 @@ class Home(Base):
     model_configs: Mapped[list["ModelConfig"]] = relationship(
         "ModelConfig", back_populates="home", cascade="all, delete-orphan"
     )
-    assignments: Mapped[list["Assignment"]] = relationship("Assignment", back_populates="home", cascade="all, delete-orphan")
+    assignments: Mapped[list["Assignment"]] = relationship(
+        "Assignment", back_populates="home", cascade="all, delete-orphan"
+    )
+    installation_requests: Mapped[list["InstallationRequest"]] = relationship(
+        "InstallationRequest", back_populates="home", cascade="all, delete-orphan"
+    )
 
 
 class Room(Base):
@@ -324,3 +329,95 @@ class DeviceConfiguration(Base):
 
     # Relationships
     device: Mapped["Device"] = relationship("Device", back_populates="configuration")
+
+
+class InstallationRequest(Base):
+    """Installation request for a home (owner ↔ technician workflow)."""
+
+    __tablename__ = "installation_requests"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    home_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("homes.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    owner_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    technician_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    kind: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default="install",
+    )  # 'install','change'
+    status: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default="submitted",
+        index=True,
+    )  # 'submitted','in_review','approved','rejected','installed'
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+    # Relationships
+    home: Mapped["Home"] = relationship("Home", back_populates="installation_requests")
+    owner: Mapped["User"] = relationship("User", foreign_keys=[owner_id])
+    technician: Mapped["User | None"] = relationship("User", foreign_keys=[technician_id])
+    items: Mapped[list["InstallationItem"]] = relationship(
+        "InstallationItem", back_populates="request", cascade="all, delete-orphan"
+    )
+
+
+class InstallationItem(Base):
+    """Individual room/coverage entry within an installation request."""
+
+    __tablename__ = "installation_items"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    request_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("installation_requests.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    room_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("rooms.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    coverage_type: Mapped[str] = mapped_column(Text, nullable=False)  # e.g. 'full', 'intrusion', 'safety'
+    desired_device_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    proposed_device_type: Mapped[str | None] = mapped_column(Text, nullable=True)  # technician can override
+    status: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default="pending",
+    )  # 'pending','approved','rejected','installed'
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Relationships
+    request: Mapped["InstallationRequest"] = relationship(
+        "InstallationRequest", back_populates="items"
+    )
+    room: Mapped["Room | None"] = relationship("Room")

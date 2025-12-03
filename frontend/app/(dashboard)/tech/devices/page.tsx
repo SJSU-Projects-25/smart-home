@@ -187,8 +187,12 @@ export default function TechDevicesPage() {
       await deleteDevice(deviceId).unwrap();
       setSnackbar({ open: true, message: "Device deleted successfully", severity: "success" });
       refetch();
-    } catch (error) {
-      setSnackbar({ open: true, message: "Failed to delete device", severity: "error" });
+    } catch (error: any) {
+      setSnackbar({
+        open: true,
+        message: error?.data?.detail || "Failed to delete device",
+        severity: "error",
+      });
     }
   };
 
