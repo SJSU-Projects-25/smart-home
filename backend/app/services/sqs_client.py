@@ -45,10 +45,12 @@ def enqueue_inference_job(
     }
 
     try:
-        sqs.send_message(
+        print(f"Enqueuing job to SQS: {message_body}")
+        response = sqs.send_message(
             QueueUrl=settings.sqs_queue_url,
             MessageBody=json.dumps(message_body),
         )
+        print(f"Successfully enqueued job to SQS. MessageId: {response.get('MessageId')}")
     except ClientError as e:
+        print(f"Failed to enqueue job to SQS: {str(e)}")
         raise Exception(f"Failed to enqueue job to SQS: {str(e)}")
-

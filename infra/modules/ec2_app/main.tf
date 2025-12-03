@@ -87,28 +87,47 @@ variable "tags" {
   default     = {}
 }
 
-# TODO: Create IAM role for EC2 instances
-# resource "aws_iam_role" "ec2" {
-#   name = "${var.environment}-ec2-role"
-#   assume_role_policy = jsonencode({
-#     Version = "2012-10-17"
-#     Statement = [{
-#       Action = "sts:AssumeRole"
-#       Effect = "Allow"
-#       Principal = {
-#         Service = "ec2.amazonaws.com"
-#       }
-#     }]
-#   })
-# }
+# IAM Role for EC2 instances
+resource "aws_iam_role" "ec2" {
+  name = "${var.environment}-ec2-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "ec2.amazonaws.com"
+      }
+    }]
+  })
+}
 
-# TODO: Attach policies for ECR, S3, SQS access
-# resource "aws_iam_role_policy_attachment" "ecr" { ... }
-# resource "aws_iam_role_policy_attachment" "s3" { ... }
-# resource "aws_iam_role_policy_attachment" "sqs" { ... }
+# Attach policies for ECR, S3, SQS access
+resource "aws_iam_role_policy_attachment" "ecr" {
+  role       = aws_iam_role.ec2.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+}
 
-# TODO: Create instance profile
-# resource "aws_iam_instance_profile" "ec2" { ... }
+resource "aws_iam_role_policy_attachment" "s3" {
+  role       = aws_iam_role.ec2.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+}
+
+resource "aws_iam_role_policy_attachment" "sqs" {
+  role       = aws_iam_role.ec2.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSQSFullAccess"
+}
+
+resource "aws_iam_role_policy_attachment" "ssm" {
+  role       = aws_iam_role.ec2.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+# Create instance profile
+resource "aws_iam_instance_profile" "ec2" {
+  name = "${var.environment}-ec2-profile"
+  role = aws_iam_role.ec2.name
+}
 
 # TODO: Get latest AMI (Amazon Linux 2 or Ubuntu)
 data "aws_ami" "latest" {
@@ -129,24 +148,24 @@ resource "aws_launch_template" "api" {
 
   vpc_security_group_ids = var.security_group_ids
 
-  # TODO: Configure user data script to:
+  # Configure user data script to:
   # - Install Docker
   # - Login to ECR
   # - Pull and run API container
   # - Set environment variables
-  # user_data = base64encode(templatefile("${path.module}/user_data_api.sh", {
-  #   ecr_repo     = var.api_ecr_repo
-  #   database_url = var.database_url
-  #   mongo_uri   = var.mongo_uri
-  #   s3_bucket   = var.s3_bucket_name
-  #   sqs_queue   = var.sqs_queue_url
-  #   aws_region  = var.aws_region
-  # }))
+  user_data = base64encode(templatefile("${path.module}/user_data_api.sh", {
+    ecr_repo     = var.api_ecr_repo
+    database_url = var.database_url
+    mongo_uri   = var.mongo_uri
+    s3_bucket   = var.s3_bucket_name
+    sqs_queue   = var.sqs_queue_url
+    aws_region  = var.aws_region
+  }))
 
-  # TODO: Add IAM instance profile
-  # iam_instance_profile {
-  #   name = aws_iam_instance_profile.ec2.name
-  # }
+  # Add IAM instance profile
+  iam_instance_profile {
+    name = aws_iam_instance_profile.ec2.name
+  }
 
   tag_specifications {
     resource_type = "instance"
@@ -175,14 +194,19 @@ resource "aws_launch_template" "worker" {
 
   vpc_security_group_ids = var.security_group_ids
 
-  # TODO: Configure user data script for worker
-  # user_data = base64encode(templatefile("${path.module}/user_data_worker.sh", {
-  #   ecr_repo     = var.worker_ecr_repo
-  #   database_url = var.database_url
-  #   mongo_uri   = var.mongo_uri
-  #   sqs_queue   = var.sqs_queue_url
-  #   aws_region  = var.aws_region
-  # }))
+  # Configure user data script for worker
+  user_data = base64encode(templatefile("${path.module}/user_data_worker.sh", {
+    ecr_repo     = var.worker_ecr_repo
+    database_url = var.database_url
+    mongo_uri   = var.mongo_uri
+    sqs_queue   = var.sqs_queue_url
+    aws_region  = var.aws_region
+  }))
+
+  # Add IAM instance profile
+  iam_instance_profile {
+    name = aws_iam_instance_profile.ec2.name
+  }
 
   tag_specifications {
     resource_type = "instance"

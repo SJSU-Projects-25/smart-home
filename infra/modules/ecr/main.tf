@@ -61,14 +61,14 @@ resource "aws_ecr_repository" "repos" {
 output "repository_urls" {
   description = "Map of repository names to repository URLs"
   value = {
-    for repo in var.repositories : repo => aws_ecr_repository.repos["${repo}-${var.environment}"].repository_url
+    for repo in var.repositories : repo => aws_ecr_repository.repos[repo].repository_url
   }
 }
 
 output "repository_arns" {
   description = "Map of repository names to repository ARNs"
   value = {
-    for repo in var.repositories : repo => aws_ecr_repository.repos["${repo}-${var.environment}"].arn
+    for repo in var.repositories : repo => aws_ecr_repository.repos[repo].arn
   }
 }
 

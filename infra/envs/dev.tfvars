@@ -12,22 +12,22 @@ db_allocated_storage  = 20
 db_name              = "smart_home"
 db_username          = "postgres"
 # db_password should be set via environment variable or secrets manager
-# db_password = "changeme"
+db_password = "d6FgLLecP7MjD6M1oibr0Q"
 
 # S3 Configuration
-s3_bucket_name = "smart-home-audio-dev"
+s3_bucket_name = "smart-home-audio-dev-ganeshthampi"
 
 # SQS Configuration
 sqs_queue_name = "ingest-queue-dev"
 
 # EC2/Application Configuration
-app_instance_type  = "t3.medium"
+app_instance_type  = "m7i-flex.large"
 app_min_size       = 1
 app_max_size       = 3
 app_desired_capacity = 2
 
 # MongoDB (TODO: Use DocumentDB or external MongoDB)
-# mongo_uri = "mongodb://..."
+mongo_uri = "mongodb://placeholder:27017"
 
 # Additional Tags
 tags = {

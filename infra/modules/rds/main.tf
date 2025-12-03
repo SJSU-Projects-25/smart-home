@@ -74,7 +74,7 @@ resource "aws_db_instance" "main" {
   identifier = "${var.environment}-postgres"
 
   engine         = "postgres"
-  engine_version = "15.4" # TODO: Use latest stable version
+  engine_version = "15.10" # TODO: Use latest stable version
   instance_class = var.db_instance_class
 
   allocated_storage     = var.db_allocated_storage
@@ -89,7 +89,7 @@ resource "aws_db_instance" "main" {
   vpc_security_group_ids = var.security_group_ids
   db_subnet_group_name   = aws_db_subnet_group.main.name
 
-  backup_retention_period = 7
+  backup_retention_period = 0
   backup_window          = "03:00-04:00"
   maintenance_window     = "mon:04:00-mon:05:00"
 

@@ -62,29 +62,26 @@ resource "aws_lb_listener" "http" {
   protocol          = "HTTP"
 
   default_action {
-    type = "redirect"
-    redirect {
-      port        = "443"
-      protocol    = "HTTPS"
-      status_code = "HTTP_301"
-    }
-  }
-}
-
-# HTTPS Listener
-resource "aws_lb_listener" "https" {
-  load_balancer_arn = aws_lb.main.arn
-  port              = "443"
-  protocol          = "HTTPS"
-  # TODO: Add SSL certificate ARN
-  # ssl_policy      = "ELBSecurityPolicy-TLS-1-2-2017-01"
-  # certificate_arn = aws_acm_certificate.main.arn
-
-  default_action {
     type             = "forward"
     target_group_arn = var.target_group_arn
   }
 }
+
+# HTTPS Listener
+# HTTPS Listener (Disabled for dev without cert)
+# resource "aws_lb_listener" "https" {
+#   load_balancer_arn = aws_lb.main.arn
+#   port              = "443"
+#   protocol          = "HTTPS"
+#   # TODO: Add SSL certificate ARN
+#   # ssl_policy      = "ELBSecurityPolicy-TLS-1-2-2017-01"
+#   # certificate_arn = aws_acm_certificate.main.arn
+# 
+#   default_action {
+#     type             = "forward"
+#     target_group_arn = var.target_group_arn
+#   }
+# }
 
 # TODO: Create ACM certificate for HTTPS
 # resource "aws_acm_certificate" "main" {
@@ -111,8 +108,8 @@ output "zone_id" {
   value       = aws_lb.main.zone_id
 }
 
-output "https_listener_arn" {
-  description = "HTTPS listener ARN"
-  value       = aws_lb_listener.https.arn
-}
+# output "https_listener_arn" {
+#   description = "HTTPS listener ARN"
+#   value       = aws_lb_listener.https.arn
+# }
 

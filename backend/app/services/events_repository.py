@@ -13,12 +13,23 @@ class EventsRepository:
 
     def __init__(self, mongo_uri: str, database_name: str = "smart_home"):
         """Initialize MongoDB connection."""
-        self.client = MongoClient(mongo_uri)
-        self.db: Database = self.client[database_name]
-        self.events: Collection = self.db["events"]
+        try:
+            self.client = MongoClient(mongo_uri, serverSelectionTimeoutMS=2000)
+            # Trigger a connection check
+            self.client.admin.command('ping')
+            self.db: Database = self.client[database_name]
+            self.events: Collection = self.db["events"]
+            print(f"Connected to MongoDB at {mongo_uri}")
+        except Exception as e:
+            print(f"WARNING: Could not connect to MongoDB: {e}")
+            self.client = None
+            self.db = None
+            self.events = None
 
     def count_events_last_24h(self, home_id: UUID) -> int:
         """Count events for a specific home in the last 24 hours."""
+        if self.events is None:
+            return 0
         cutoff_time = datetime.utcnow() - timedelta(hours=24)
         count = self.events.count_documents(
             {
@@ -30,6 +41,8 @@ class EventsRepository:
 
     def count_events_by_home_last_24h(self) -> list[dict]:
         """Count events per home in the last 24 hours."""
+        if self.events is None:
+            return []
         cutoff_time = datetime.utcnow() - timedelta(hours=24)
         
         pipeline = [
@@ -45,9 +58,10 @@ class EventsRepository:
         """
         Calculate device uptime summary for a home.
         
-        This approximates uptime based on event frequency in the last 7 days.
         Devices with more recent events are considered more "online".
         """
+        if self.events is None:
+            return []
         cutoff_time = datetime.utcnow() - timedelta(days=7)
         
         pipeline = [
@@ -98,6 +112,8 @@ class EventsRepository:
 
     def get_events_by_hour_last_24h(self, home_id: Optional[UUID] = None) -> list[dict]:
         """Get event counts grouped by hour for the last 24 hours."""
+        if self.events is None:
+            return []
         cutoff_time = datetime.utcnow() - timedelta(hours=24)
         
         match_stage = {"timestamp": {"$gte": cutoff_time}}

@@ -50,27 +50,30 @@ resource "aws_cloudfront_distribution" "main" {
       }
     }
 
-    viewer_protocol_policy = "redirect-to-https"
+    viewer_protocol_policy = "allow-all"
     min_ttl                = 0
     default_ttl            = 3600
     max_ttl                = 86400
     compress               = true
   }
 
-  # TODO: Configure custom error responses for SPA routing
-  # custom_error_response {
-  #   error_code         = 404
-  #   response_code      = 200
-  #   response_page_path = "/index.html"
-  # }
+  custom_error_response {
+    error_code         = 403
+    response_code      = 200
+    response_page_path = "/index.html"
+  }
+
+  custom_error_response {
+    error_code         = 404
+    response_code      = 200
+    response_page_path = "/index.html"
+  }
 
   # TODO: Add custom domain and SSL certificate
   # aliases = ["app.example.com"]
-  # viewer_certificate {
-  #   acm_certificate_arn      = aws_acm_certificate.main.arn
-  #   ssl_support_method       = "sni-only"
-  #   minimum_protocol_version = "TLSv1.2_2021"
-  # }
+  viewer_certificate {
+    cloudfront_default_certificate = true
+  }
 
   restrictions {
     geo_restriction {
@@ -90,21 +93,21 @@ resource "aws_cloudfront_distribution" "main" {
 }
 
 # S3 Bucket Policy for CloudFront OAI
-# TODO: Create bucket policy to allow CloudFront access
-# data "aws_iam_policy_document" "s3_policy" {
-#   statement {
-#     actions   = ["s3:GetObject"]
-#     resources = ["${aws_s3_bucket.frontend.arn}/*"]
-#     principals {
-#       type        = "AWS"
-#       identifiers = [aws_cloudfront_origin_access_identity.main.iam_arn]
-#     }
-#   }
-# }
-# resource "aws_s3_bucket_policy" "frontend" {
-#   bucket = aws_s3_bucket.frontend.id
-#   policy = data.aws_iam_policy_document.s3_policy.json
-# }
+data "aws_iam_policy_document" "s3_policy" {
+  statement {
+    actions   = ["s3:GetObject"]
+    resources = ["${data.aws_s3_bucket.frontend.arn}/*"]
+    principals {
+      type        = "AWS"
+      identifiers = [aws_cloudfront_origin_access_identity.main.iam_arn]
+    }
+  }
+}
+
+resource "aws_s3_bucket_policy" "frontend" {
+  bucket = data.aws_s3_bucket.frontend.id
+  policy = data.aws_iam_policy_document.s3_policy.json
+}
 
 # Reference to S3 bucket (should be created in S3 module)
 # TODO: Import or reference the frontend bucket from S3 module

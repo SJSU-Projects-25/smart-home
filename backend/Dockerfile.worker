@@ -23,6 +23,6 @@ RUN uv sync --frozen || uv sync
 COPY app/ ./app/
 COPY worker/ ./worker/
 
-# Default command
-CMD ["uv", "run", "python", "-m", "worker.main"]
+# Default command (unbuffered output for immediate logs)
+CMD ["uv", "run", "python", "-u", "-m", "worker.main"]
 

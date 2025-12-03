@@ -13,8 +13,8 @@ class Settings(BaseSettings):
 
     # AWS Configuration
     aws_region: str = "us-west-2"
-    aws_access_key_id: str
-    aws_secret_access_key: str
+    aws_access_key_id: str | None = None
+    aws_secret_access_key: str | None = None
     s3_bucket: str
     sqs_queue_url: str
 
@@ -25,11 +25,11 @@ class Settings(BaseSettings):
     aws_s3_endpoint_url_frontend: str | None = None
 
     # JWT
-    jwt_secret: str
+    jwt_secret: str = "dev-secret"
     jwt_algorithm: str = "HS256"
 
     # Frontend
-    frontend_origin: str
+    frontend_origin: str = "http://d3fe6gbiiqsn3r.cloudfront.net"
 
     # Email/SMTP (optional, for email notifications)
     smtp_host: str | None = None

@@ -98,7 +98,7 @@ module "ec2_app" {
 
   environment         = var.environment
   vpc_id             = module.network.vpc_id
-  subnet_ids         = module.network.private_subnet_ids
+  subnet_ids         = module.network.public_subnet_ids
   security_group_ids = [module.network.app_security_group_id]
   instance_type      = var.app_instance_type
   min_size           = var.app_min_size

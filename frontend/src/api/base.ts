@@ -25,6 +25,7 @@ export const api = createApi({
     "Policy",
     "ModelConfig",
     "Home",
+    "Network",
     "Assignment",
     "OpsHouse",
     "AuditLog",
@@ -32,4 +33,3 @@ export const api = createApi({
   ],
   endpoints: () => ({}),
 });
-
