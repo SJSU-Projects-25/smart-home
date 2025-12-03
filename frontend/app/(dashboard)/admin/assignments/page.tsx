@@ -77,10 +77,14 @@ export default function AdminAssignmentsPage() {
     return assignmentsByTech[effectiveSelectedTechId] || [];
   }, [assignmentsByTech, effectiveSelectedTechId]);
 
-  const assignedHomeIds = useMemo(
-    () => new Set(currentAssignments.map((a) => a.home_id)),
-    [currentAssignments]
-  );
+  // Homes that are assigned to any technician (global), so each home has at most one technician
+  const assignedHomeIds = useMemo(() => {
+    const set = new Set<string>();
+    (assignments || []).forEach((a) => {
+      set.add(a.home_id);
+    });
+    return set;
+  }, [assignments]);
 
   const availableHomes = useMemo(
     () => (homes || []).filter((h) => !assignedHomeIds.has(h.id)),
@@ -343,7 +347,8 @@ export default function AdminAssignmentsPage() {
                   </Typography>
                 ) : availableHomes.length === 0 ? (
                   <Typography variant="body2" color="text.secondary">
-                    All homes are already assigned to this technician.
+                    All homes are already assigned to technicians. Unassign a home first if you need
+                    to move it to a different technician.
                   </Typography>
                 ) : (
                   <DataGrid
