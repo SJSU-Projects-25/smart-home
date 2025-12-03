@@ -5,9 +5,10 @@ from uuid import UUID
 
 import boto3
 from app.core.config import Settings
-from app.db.models import Alert, Device
+from app.db.models import Alert, Device, ModelConfig
 from app.db.session import get_session_local
 from app.services.ingestion_service import EventsRepository
+from app.utils.model_mapping import ml_type_to_config_key
 from worker.model_runner import ModelRunner
 from worker.sqs_loop import delete_message, parse_job, receive_messages
 
@@ -56,12 +57,40 @@ def process_job(
         status="processed",
     )
 
-    # Create alert in Postgres
+    # Get device
     device = db_session.query(Device).filter(Device.id == device_id).first()
     if not device:
         print(f"Warning: Device not found: {device_id}")
         return
 
+    # Check model configuration before creating alert
+    ml_type = decision_result["type"]
+    config_key = ml_type_to_config_key(ml_type)
+    
+    if config_key:
+        # Get model config for this detection type
+        model_config = db_session.query(ModelConfig).filter(
+            ModelConfig.home_id == home_id,
+            ModelConfig.model_key == config_key
+        ).first()
+        
+        # Check if model is enabled
+        if model_config and not model_config.enabled:
+            print(f"Model {config_key} is disabled, skipping alert creation")
+            return
+        
+        # Check threshold (default to 0.5 if not set)
+        threshold = model_config.threshold if model_config and model_config.threshold is not None else 0.5
+        score = decision_result["score"]
+        
+        if score < threshold:
+            print(f"Score {score:.3f} below threshold {threshold:.3f} for {config_key}, skipping alert")
+            return
+    else:
+        # Unknown ML type, log warning but still create alert (backward compatibility)
+        print(f"Warning: Unknown ML type '{ml_type}', no config check performed")
+
+    # Create alert in Postgres
     alert = Alert(
         home_id=home_id,
         room_id=device.room_id,
@@ -77,7 +106,7 @@ def process_job(
     db_session.commit()
     db_session.refresh(alert)
 
-    print(f"Created alert {alert.id} for device {device_id}")
+    print(f"Created alert {alert.id} for device {device_id} (type: {ml_type}, score: {decision_result['score']:.3f})")
 
     # Send email notifications for high-severity alerts
     if decision_result["severity"] == "high":

@@ -20,7 +20,22 @@ import { RootState } from "@/src/store";
 
 export const dynamic = "force-dynamic";
 
-const MODEL_KEYS = ["scream", "smoke_alarm", "glass_break"];
+// Mapping from model keys to display names
+// These correspond to the ML model's detection types
+const MODEL_CONFIG = [
+  { key: "fall_impact", label: "Fall / Impact", severity: "high" },
+  { key: "distress_pain", label: "Distress / Pain", severity: "high" },
+  { key: "choking_vomiting", label: "Choking / Vomiting", severity: "high" },
+  { key: "breathing_emergency", label: "Breathing Emergency", severity: "high" },
+  { key: "fire_smoke_alarm", label: "Fire / Smoke Alarm", severity: "high" },
+  { key: "glass_break", label: "Glass Break", severity: "high" },
+  { key: "coughing", label: "Coughing", severity: "medium" },
+  { key: "water_running", label: "Water Running", severity: "medium" },
+  { key: "door_knock", label: "Door / Knock", severity: "low" },
+  { key: "footsteps", label: "Footsteps", severity: "low" },
+] as const;
+
+const MODEL_KEYS = MODEL_CONFIG.map((m) => m.key);
 
 export default function ModelsPage() {
   const router = useRouter();
@@ -79,23 +94,26 @@ export default function ModelsPage() {
           gridTemplateColumns: {
             xs: "1fr",
             md: "repeat(2, 1fr)",
+            lg: "repeat(3, 1fr)",
           },
           gap: 3,
           mt: 3,
         }}
       >
-        {MODEL_KEYS.map((modelKey) => {
-          const config = configsMap.get(modelKey);
+        {MODEL_CONFIG.map((model) => {
+          const config = configsMap.get(model.key);
           const enabled = config?.enabled ?? true;
           const threshold = config?.threshold ?? 0.5;
 
           return (
             <ModelConfigCard
-              key={modelKey}
-              modelKey={modelKey}
+              key={model.key}
+              modelKey={model.key}
+              label={model.label}
+              severity={model.severity}
               enabled={enabled}
               threshold={threshold}
-              onSave={(enabled, threshold) => handleSave(modelKey, enabled, threshold)}
+              onSave={(enabled, threshold) => handleSave(model.key, enabled, threshold)}
             />
           );
         })}
@@ -121,12 +139,21 @@ export default function ModelsPage() {
 
 interface ModelConfigCardProps {
   modelKey: string;
+  label: string;
+  severity: "high" | "medium" | "low";
   enabled: boolean;
   threshold: number;
   onSave: (enabled: boolean, threshold: number) => void;
 }
 
-function ModelConfigCard({ modelKey, enabled: initialEnabled, threshold: initialThreshold, onSave }: ModelConfigCardProps) {
+function ModelConfigCard({
+  modelKey,
+  label,
+  severity,
+  enabled: initialEnabled,
+  threshold: initialThreshold,
+  onSave,
+}: ModelConfigCardProps) {
   const [enabled, setEnabled] = useState(initialEnabled);
   const [threshold, setThreshold] = useState(initialThreshold);
 
@@ -134,16 +161,23 @@ function ModelConfigCard({ modelKey, enabled: initialEnabled, threshold: initial
     onSave(enabled, threshold);
   };
 
+  const severityColor =
+    severity === "high" ? "error" : severity === "medium" ? "warning" : "info";
+
   return (
     <Card elevation={1}>
       <CardContent>
         <Stack spacing={3}>
           <Box>
             <Typography variant="h6" gutterBottom>
-              {modelKey
-                .split("_")
-                .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                .join(" ")}
+              {label}
+            </Typography>
+            <Typography
+              variant="caption"
+              color={`${severityColor}.main`}
+              sx={{ fontWeight: 500 }}
+            >
+              {severity.toUpperCase()} SEVERITY
             </Typography>
           </Box>
 
