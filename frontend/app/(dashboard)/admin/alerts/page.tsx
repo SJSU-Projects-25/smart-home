@@ -54,7 +54,7 @@ export default function AdminAlertsPage() {
   });
 
   // Load homes so we can show human-friendly names in "Top Homes by Alerts"
-  const { data: homesData } = useListHomesQuery({});
+  const { data: homesData } = useListHomesQuery();
 
   const allAlerts: AdminAlert[] = alerts || [];
 
@@ -450,4 +450,3 @@ export default function AdminAlertsPage() {
     </Box>
   );
 }
-

@@ -41,9 +41,14 @@ export default function ModelsPage() {
   const router = useRouter();
   const user = useSelector((state: RootState) => state.auth.user);
   const homeId = user?.home_id;
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string }>({
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: "success" | "error";
+  }>({
     open: false,
     message: "",
+    severity: "success",
   });
 
   // Redirect if no home assigned
@@ -58,7 +63,7 @@ export default function ModelsPage() {
     { skip: !homeId }
   );
 
-  const [updateConfig] = useUpdateModelConfigMutation();
+  const [updateConfig, { isLoading: isSaving }] = useUpdateModelConfigMutation();
 
   const configsMap = new Map((configs || []).map((c) => [c.model_key, c]));
 
@@ -71,9 +76,17 @@ export default function ModelsPage() {
         home_id: homeId,
         data: { enabled, threshold },
       }).unwrap();
-      setSnackbar({ open: true, message: `${modelKey} configuration saved` });
+      setSnackbar({
+        open: true,
+        message: `${modelKey} configuration saved`,
+        severity: "success",
+      });
     } catch (error) {
-      setSnackbar({ open: true, message: "Failed to save configuration" });
+      setSnackbar({
+        open: true,
+        message: "Failed to save configuration",
+        severity: "error",
+      });
     }
   };
 
@@ -107,16 +120,17 @@ export default function ModelsPage() {
 
           return (
             <ModelConfigCard
-              key={model.key}
+              key={`${model.key}-${enabled}-${threshold}`}
               modelKey={model.key}
               label={model.label}
               severity={model.severity}
               enabled={enabled}
               threshold={threshold}
-              onSave={(enabled, threshold) => handleSave(model.key, enabled, threshold)}
-            />
-          );
-        })}
+          onSave={(enabled, threshold) => handleSave(model.key, enabled, threshold)}
+          isSaving={isSaving}
+        />
+      );
+    })}
       </Box>
 
       <Snackbar
@@ -127,7 +141,7 @@ export default function ModelsPage() {
       >
         <Alert
           onClose={() => setSnackbar({ ...snackbar, open: false })}
-          severity="success"
+          severity={snackbar.severity}
           sx={{ width: "100%" }}
         >
           {snackbar.message}
@@ -144,6 +158,7 @@ interface ModelConfigCardProps {
   enabled: boolean;
   threshold: number;
   onSave: (enabled: boolean, threshold: number) => void;
+  isSaving?: boolean;
 }
 
 function ModelConfigCard({
@@ -153,10 +168,12 @@ function ModelConfigCard({
   enabled: initialEnabled,
   threshold: initialThreshold,
   onSave,
+  isSaving,
 }: ModelConfigCardProps) {
   const [enabled, setEnabled] = useState(initialEnabled);
   const [threshold, setThreshold] = useState(initialThreshold);
 
+  // Sync local state when data reloads from server
   const handleSave = () => {
     onSave(enabled, threshold);
   };
@@ -200,7 +217,7 @@ function ModelConfigCard({
             />
           </Box>
 
-          <Button variant="contained" onClick={handleSave} fullWidth>
+          <Button variant="contained" onClick={handleSave} fullWidth disabled={isSaving}>
             Save
           </Button>
         </Stack>

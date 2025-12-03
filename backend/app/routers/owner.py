@@ -342,44 +342,52 @@ async def list_owner_installation_requests_endpoint(
     """List installation requests for the owner's home."""
     from app.db.models import Home, InstallationRequest
 
-    home = db.query(Home).filter(Home.owner_id == current_user.id).first()
-    if not home:
-        return []
+    try:
+        home = db.query(Home).filter(Home.owner_id == current_user.id).first()
+        if not home:
+            return []
 
-    requests = (
-        db.query(InstallationRequest)
-        .filter(InstallationRequest.home_id == home.id)
-        .order_by(InstallationRequest.created_at.desc())
-        .all()
-    )
-
-    responses: list[InstallationRequestResponse] = []
-    for req in requests:
-        responses.append(
-            InstallationRequestResponse(
-                id=req.id,
-                home_id=req.home_id,
-                owner_id=req.owner_id,
-                technician_id=req.technician_id,
-                status=req.status,
-                notes=req.notes,
-                created_at=req.created_at,
-                updated_at=req.updated_at,
-                items=[
-                    {
-                        "id": item.id,
-                        "room_id": item.room_id,
-                        "coverage_type": item.coverage_type,
-                        "desired_device_count": item.desired_device_count,
-                        "notes": item.notes,
-                        "proposed_device_type": item.proposed_device_type,
-                        "status": item.status,
-                    }
-                    for item in req.items
-                ],
-            )
+        requests = (
+            db.query(InstallationRequest)
+            .filter(InstallationRequest.home_id == home.id)
+            .order_by(InstallationRequest.created_at.desc())
+            .all()
         )
-    return responses
+
+        responses: list[InstallationRequestResponse] = []
+        for req in requests:
+            responses.append(
+                InstallationRequestResponse(
+                    id=req.id,
+                    home_id=req.home_id,
+                    owner_id=req.owner_id,
+                    technician_id=req.technician_id,
+                    status=req.status,
+                    notes=req.notes,
+                    created_at=req.created_at,
+                    updated_at=req.updated_at,
+                    items=[
+                        {
+                            "id": item.id,
+                            "room_id": item.room_id,
+                            "coverage_type": item.coverage_type,
+                            "desired_device_count": item.desired_device_count,
+                            "notes": item.notes,
+                            "proposed_device_type": item.proposed_device_type,
+                            "status": item.status,
+                        }
+                        for item in req.items
+                    ],
+                )
+            )
+        return responses
+    except Exception as e:
+        # Surface the underlying error so the UI and support can diagnose quickly
+        print(f"Error listing owner installation requests: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to load installation requests: {e}",
+        )
 
 
 @router.patch("/installation-requests/{request_id}", response_model=InstallationRequestResponse)
@@ -439,4 +447,3 @@ async def owner_update_installation_request_status_endpoint(
             for item in req.items
         ],
     )
-

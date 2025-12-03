@@ -128,18 +128,19 @@ def process_job(
             ModelConfig.model_key == config_key
         ).first()
         
-        # Check if model is enabled (TEMPORARILY DISABLED FOR TESTING)
+        # Respect enabled flag and threshold from UI-configured model settings
         print(f"Checking model config for {config_key}: enabled={model_config.enabled if model_config else 'N/A'}", flush=True)
-        # if model_config and not model_config.enabled:
-        #     print(f"Model {config_key} is disabled, skipping alert creation")
-        #     return
+        if model_config and not model_config.enabled:
+            print(f"Model {config_key} is disabled, skipping alert creation")
+            db_session.close()
+            return
         
-        # Check threshold (FORCED to 0.0 for testing, ignoring database config)
-        threshold = 0.0  # model_config.threshold if model_config and model_config.threshold is not None else 0.0
+        threshold = model_config.threshold if model_config and model_config.threshold is not None else 0.5
         score = decision_result["score"]
         
         if score < threshold:
             print(f"Score {score:.3f} below threshold {threshold:.3f} for {config_key}, skipping alert")
+            db_session.close()
             return
     else:
         # Unknown ML type, log warning but still create alert (backward compatibility)

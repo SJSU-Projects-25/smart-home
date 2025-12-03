@@ -240,9 +240,9 @@ export const adminApi = api.injectEndpoints({
       query: (params) => ({
         url: "/admin/assignments",
         method: "GET",
-        params,
+        params: params ? params : undefined,
       }),
-      providesTags: ["User"],
+      providesTags: ["Assignment"],
     }),
     createAssignment: builder.mutation<
       AdminAssignment,
@@ -282,4 +282,3 @@ export const {
   useCreateAssignmentMutation,
   useDeleteAssignmentMutation,
 } = adminApi;
-

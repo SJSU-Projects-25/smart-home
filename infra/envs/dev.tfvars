@@ -27,7 +27,7 @@ app_max_size       = 3
 app_desired_capacity = 2
 
 # MongoDB (TODO: Use DocumentDB or external MongoDB)
-mongo_uri = "mongodb://placeholder:27017"
+mongo_uri = "mongodb://10.0.1.173:27017" # Currently running on worker instance i-0af0d8de9286bb55a
 
 # Additional Tags
 tags = {

@@ -89,7 +89,7 @@ export const installationRequestsApi = api.injectEndpoints({
       query: (params) => ({
         url: "/tech/installation-requests",
         method: "GET",
-        params,
+        params: params ? params : undefined,
       }),
       providesTags: ["InstallationRequest"],
     }),
@@ -137,5 +137,4 @@ export const {
   useUpdateTechInstallationItemMutation,
   useApproveAllTechInstallationItemsMutation,
 } = installationRequestsApi;
-
 

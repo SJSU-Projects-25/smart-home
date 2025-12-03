@@ -37,56 +37,64 @@ async def list_tech_installation_requests_endpoint(
     """List installation requests for homes assigned to the technician."""
     from app.db.models import Assignment, InstallationRequest
 
-    # Determine technician id (admin can view all)
-    if current_user.role == "technician":
-        tech_id = current_user.id
-        assignments = db.query(Assignment).filter(Assignment.user_id == tech_id).all()
-        home_ids = [a.home_id for a in assignments]
-        if not home_ids:
-            return []
+    try:
+        # Determine technician id (admin can view all)
+        if current_user.role == "technician":
+            tech_id = current_user.id
+            assignments = db.query(Assignment).filter(Assignment.user_id == tech_id).all()
+            home_ids = [a.home_id for a in assignments]
+            if not home_ids:
+                return []
 
-        query = db.query(InstallationRequest).filter(
-            InstallationRequest.home_id.in_(home_ids)
-        )
-    else:  # admin
-        query = db.query(InstallationRequest)
-
-    if status_filter:
-        query = query.filter(InstallationRequest.status == status_filter)
-
-    requests = (
-        query.order_by(InstallationRequest.created_at.desc())
-        .limit(200)
-        .all()
-    )
-
-    responses: list[InstallationRequestResponse] = []
-    for req in requests:
-        responses.append(
-            InstallationRequestResponse(
-                id=req.id,
-                home_id=req.home_id,
-                owner_id=req.owner_id,
-                technician_id=req.technician_id,
-                status=req.status,
-                notes=req.notes,
-                created_at=req.created_at,
-                updated_at=req.updated_at,
-                items=[
-                    {
-                        "id": item.id,
-                        "room_id": item.room_id,
-                        "coverage_type": item.coverage_type,
-                        "notes": item.notes,
-                        "proposed_device_type": item.proposed_device_type,
-                        "status": item.status,
-                    }
-                    for item in req.items
-                ],
+            query = db.query(InstallationRequest).filter(
+                InstallationRequest.home_id.in_(home_ids)
             )
+        else:  # admin
+            query = db.query(InstallationRequest)
+
+        if status_filter:
+            query = query.filter(InstallationRequest.status == status_filter)
+
+        requests = (
+            query.order_by(InstallationRequest.created_at.desc())
+            .limit(200)
+            .all()
         )
 
-    return responses
+        responses: list[InstallationRequestResponse] = []
+        for req in requests:
+            responses.append(
+                InstallationRequestResponse(
+                    id=req.id,
+                    home_id=req.home_id,
+                    owner_id=req.owner_id,
+                    technician_id=req.technician_id,
+                    status=req.status,
+                    notes=req.notes,
+                    created_at=req.created_at,
+                    updated_at=req.updated_at,
+                    items=[
+                        {
+                            "id": item.id,
+                            "room_id": item.room_id,
+                            "coverage_type": item.coverage_type,
+                            "desired_device_count": item.desired_device_count,
+                            "notes": item.notes,
+                            "proposed_device_type": item.proposed_device_type,
+                            "status": item.status,
+                        }
+                        for item in req.items
+                    ],
+                )
+            )
+
+        return responses
+    except Exception as e:
+        print(f"Error listing tech installation requests: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to load installation requests: {e}",
+        )
 
 
 @router.patch(
@@ -376,4 +384,3 @@ async def approve_all_items_for_request_endpoint(
             for item in req.items
         ],
     )
-

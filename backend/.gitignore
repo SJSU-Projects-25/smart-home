@@ -93,6 +93,8 @@ pytestdebug.log
 *.bin
 models/
 worker/model_cache/
+worker/yamnet_savedmodel/
+worker/model_runner_simple.py
 
 # -----------------------------
 # AWS / LocalStack
