@@ -130,6 +130,18 @@ export interface AdminAuditLog {
   details: string;
 }
 
+export interface AdminAssignment {
+  id: string;
+  user_id: string;
+  user_email: string;
+  role: "technician" | "staff";
+  home_id: string;
+  home_name: string;
+  home_status?: string;
+  devices_count?: number;
+  open_alerts_count?: number;
+}
+
 export const adminApi = api.injectEndpoints({
   endpoints: (builder) => ({
     listUsers: builder.query<AdminUser[], void>({
@@ -224,6 +236,32 @@ export const adminApi = api.injectEndpoints({
       }),
       providesTags: [],
     }),
+    listAssignments: builder.query<AdminAssignment[], { technician_id?: string; home_id?: string } | void>({
+      query: (params) => ({
+        url: "/admin/assignments",
+        method: "GET",
+        params,
+      }),
+      providesTags: ["User"],
+    }),
+    createAssignment: builder.mutation<
+      AdminAssignment,
+      { user_id: string; home_id: string; role?: "technician" | "staff" }
+    >({
+      query: (body) => ({
+        url: "/admin/assignments",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["User"],
+    }),
+    deleteAssignment: builder.mutation<void, string>({
+      query: (assignmentId) => ({
+        url: `/admin/assignments/${assignmentId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["User"],
+    }),
   }),
 });
 
@@ -240,5 +278,8 @@ export const {
   useListDevicesQuery,
   useListModelsQuery,
   useListAuditLogsQuery,
+  useListAssignmentsQuery: useListAdminAssignmentsQuery,
+  useCreateAssignmentMutation,
+  useDeleteAssignmentMutation,
 } = adminApi;
 

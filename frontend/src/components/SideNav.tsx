@@ -70,6 +70,7 @@ const adminNavItems: NavItem[] = [
   { label: "Overview", path: "/admin/overview", icon: <DashboardIcon />, roles: ["admin"], section: "Admin" },
   { label: "Users", path: "/admin/users", icon: <PeopleIcon />, roles: ["admin"] },
   { label: "Homes", path: "/admin/homes", icon: <HomeIcon />, roles: ["admin"] },
+  { label: "Assignments", path: "/admin/assignments", icon: <AssignmentIcon />, roles: ["admin"] },
   { label: "Alerts", path: "/admin/alerts", icon: <NotificationsIcon />, roles: ["admin"] },
   { label: "Devices", path: "/admin/devices", icon: <DevicesIcon />, roles: ["admin"] },
   { label: "Models", path: "/admin/models", icon: <ScienceIcon />, roles: ["admin"] },

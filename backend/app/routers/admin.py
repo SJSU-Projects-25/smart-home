@@ -235,6 +235,152 @@ async def list_homes_endpoint(
     return result
 
 
+@router.get("/assignments")
+async def list_assignments_admin_endpoint(
+    technician_id: Annotated[Optional[UUID], Query()] = None,
+    home_id: Annotated[Optional[UUID], Query()] = None,
+    current_user: Annotated[User, Depends(require_role("admin"))] = None,
+    db: Annotated[Session, Depends(get_db)] = None,
+):
+    """List user-home assignments (admin only)."""
+    from app.db.models import Assignment, Home
+    from sqlalchemy import func
+
+    query = db.query(Assignment)
+    if technician_id:
+        query = query.filter(Assignment.user_id == technician_id)
+    if home_id:
+        query = query.filter(Assignment.home_id == home_id)
+
+    assignments = query.all()
+    results: list[dict] = []
+
+    for assignment in assignments:
+        tech = db.query(User).filter(User.id == assignment.user_id).first()
+        home = db.query(Home).filter(Home.id == assignment.home_id).first()
+        if not tech or not home:
+            continue
+
+        from app.db.models import Device, Alert
+
+        devices_count = (
+            db.query(func.count(Device.id)).filter(Device.home_id == home.id).scalar() or 0
+        )
+        open_alerts_count = (
+            db.query(func.count(Alert.id))
+            .filter(Alert.home_id == home.id, Alert.status == "open")
+            .scalar()
+            or 0
+        )
+
+        results.append(
+            {
+                "id": str(assignment.id),
+                "user_id": str(assignment.user_id),
+                "user_email": tech.email,
+                "role": assignment.role,
+                "home_id": str(assignment.home_id),
+                "home_name": home.name,
+                "home_status": home.status,
+                "devices_count": devices_count,
+                "open_alerts_count": open_alerts_count,
+            }
+        )
+
+    return results
+
+
+@router.post("/assignments", status_code=status.HTTP_201_CREATED)
+async def create_assignment_admin_endpoint(
+    payload: dict,
+    current_user: Annotated[User, Depends(require_role("admin"))] = None,
+    db: Annotated[Session, Depends(get_db)] = None,
+):
+    """Create a technician/staff assignment to a home (admin only)."""
+    from app.db.models import Assignment, Home
+
+    try:
+        user_id = UUID(str(payload.get("user_id")))
+        home_id = UUID(str(payload.get("home_id")))
+    except (TypeError, ValueError):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="user_id and home_id must be valid UUIDs",
+        )
+
+    role = payload.get("role") or "technician"
+
+    tech = db.query(User).filter(User.id == user_id).first()
+    if not tech:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    if tech.role not in ("technician", "staff"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Assignments are only supported for technician or staff users",
+        )
+
+    home = db.query(Home).filter(Home.id == home_id).first()
+    if not home:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Home not found")
+
+    # Idempotent: if assignment already exists, just return it
+    existing = (
+        db.query(Assignment)
+        .filter(Assignment.user_id == user_id, Assignment.home_id == home_id)
+        .first()
+    )
+    if existing:
+        assignment = existing
+    else:
+        assignment = Assignment(user_id=user_id, home_id=home_id, role=role)
+        db.add(assignment)
+        db.commit()
+        db.refresh(assignment)
+
+    from app.db.models import Device, Alert
+    from sqlalchemy import func
+
+    devices_count = (
+        db.query(func.count(Device.id)).filter(Device.home_id == home.id).scalar() or 0
+    )
+    open_alerts_count = (
+        db.query(func.count(Alert.id))
+        .filter(Alert.home_id == home.id, Alert.status == "open")
+        .scalar()
+        or 0
+    )
+
+    return {
+        "id": str(assignment.id),
+        "user_id": str(assignment.user_id),
+        "user_email": tech.email,
+        "role": assignment.role,
+        "home_id": str(assignment.home_id),
+        "home_name": home.name,
+        "home_status": home.status,
+        "devices_count": devices_count,
+        "open_alerts_count": open_alerts_count,
+    }
+
+
+@router.delete("/assignments/{assignment_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_assignment_admin_endpoint(
+    assignment_id: UUID,
+    current_user: Annotated[User, Depends(require_role("admin"))] = None,
+    db: Annotated[Session, Depends(get_db)] = None,
+):
+    """Delete an assignment (admin only)."""
+    from app.db.models import Assignment
+
+    assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
+    if not assignment:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assignment not found")
+
+    db.delete(assignment)
+    db.commit()
+    return None
+
+
 @router.post("/homes", response_model=HomeResponse, status_code=status.HTTP_201_CREATED)
 async def create_home_endpoint(
     home_data: HomeCreate,
