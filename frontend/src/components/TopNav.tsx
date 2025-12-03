@@ -17,6 +17,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../store";
 import { clearCredentials } from "../store/slices/authSlice";
+import { api } from "../api/base";
 import { useRouter } from "next/navigation";
 
 interface TopNavProps {
@@ -38,6 +39,8 @@ export function TopNav({ onMenuClick }: TopNavProps) {
   };
 
   const handleLogout = () => {
+    // Clear all cached API data when logging out to avoid leaking previous user's data
+    dispatch(api.util.resetApiState());
     dispatch(clearCredentials());
     handleMenuClose();
     router.push("/login");

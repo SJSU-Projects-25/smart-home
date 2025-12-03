@@ -17,6 +17,7 @@ import { setCredentials } from "@/src/store/slices/authSlice";
 import { RootState } from "@/src/store";
 import { useLoginMutation } from "@/src/api/auth";
 import { getOverviewPath } from "@/src/utils/roles";
+import { api } from "@/src/api/base";
 
 
 export default function LoginPage() {
@@ -51,6 +52,8 @@ export default function LoginPage() {
 
     try {
       const response = await login({ email, password }).unwrap();
+      // Reset all cached API data when changing users to avoid stale results
+      dispatch(api.util.resetApiState());
       dispatch(setCredentials(response));
       const overviewPath = getOverviewPath(response.user.role);
       router.push(overviewPath);
