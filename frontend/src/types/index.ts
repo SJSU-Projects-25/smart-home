@@ -17,10 +17,10 @@ export interface User {
 export interface RegisterRequest {
   email: string;
   password: string;
-  role: "owner" | "technician";
-  first_name: string;
-  last_name: string;
-  contact_number: string;
+  role: "owner" | "technician" | "staff" | "admin";
+  first_name?: string;
+  last_name?: string;
+  contact_number?: string;
 
   // Home Owner fields
   home_name?: string;

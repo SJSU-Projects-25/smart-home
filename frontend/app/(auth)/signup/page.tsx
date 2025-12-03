@@ -23,7 +23,7 @@ import { RegisterRequest } from "@/src/types";
 export default function SignUpPage() {
     const router = useRouter();
     const [register, { isLoading }] = useRegisterMutation();
-    const [role, setRole] = useState<"owner" | "technician">("owner");
+    const [role, setRole] = useState<"owner" | "technician" | "staff" | "admin">("owner");
     const [formData, setFormData] = useState({
         email: "",
         password: "",
@@ -49,7 +49,7 @@ export default function SignUpPage() {
 
     const handleRoleChange = (
         event: React.MouseEvent<HTMLElement>,
-        newRole: "owner" | "technician" | null
+        newRole: "owner" | "technician" | "staff" | "admin" | null
     ) => {
         if (newRole !== null) {
             setRole(newRole);
@@ -138,6 +138,8 @@ export default function SignUpPage() {
                         >
                             <ToggleButton value="owner">Home Owner</ToggleButton>
                             <ToggleButton value="technician">Technician</ToggleButton>
+                            <ToggleButton value="staff">Staff</ToggleButton>
+                            <ToggleButton value="admin">Admin</ToggleButton>
                         </ToggleButtonGroup>
                     </Box>
 
@@ -151,7 +153,6 @@ export default function SignUpPage() {
                                     name="first_name"
                                     value={formData.first_name}
                                     onChange={handleChange}
-                                    required
                                 />
                             </Grid>
                             <Grid size={{ xs: 12, sm: 6 }}>
@@ -161,7 +162,6 @@ export default function SignUpPage() {
                                     name="last_name"
                                     value={formData.last_name}
                                     onChange={handleChange}
-                                    required
                                 />
                             </Grid>
                             <Grid size={{ xs: 12 }}>
@@ -193,7 +193,6 @@ export default function SignUpPage() {
                                     name="contact_number"
                                     value={formData.contact_number}
                                     onChange={handleChange}
-                                    required
                                 />
                             </Grid>
 
