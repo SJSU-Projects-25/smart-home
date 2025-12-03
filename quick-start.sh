@@ -40,3 +40,4 @@ echo "💡 Changes to code will automatically reload!"
 echo "   To view logs: $COMPOSE_CMD -f docker-compose.local.yml logs -f"
 echo "   To stop: $COMPOSE_CMD -f docker-compose.local.yml down"
 
+

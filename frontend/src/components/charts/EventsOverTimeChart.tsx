@@ -100,3 +100,4 @@ export function EventsOverTimeChart({ data, title = "Events Over Time", height =
   );
 }
 
+

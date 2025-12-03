@@ -310,23 +310,26 @@ async def list_all_alerts_endpoint(
     
     alerts = query.order_by(Alert.created_at.desc()).limit(500).all()
     
-    result = []
+    result: list[AlertResponse] = []
     for alert in alerts:
-        home = db.query(Home).filter(Home.id == alert.home_id).first()
+        # Home is not currently surfaced in the admin alert DTO, but we may reuse it later
+        # for richer analytics (home name, owner, etc.).
+        db.query(Home).filter(Home.id == alert.home_id).first()
         result.append(
             AlertResponse(
                 id=alert.id,
+                home_id=alert.home_id,
+                room_id=alert.room_id,
+                device_id=alert.device_id,
                 type=alert.type,
                 severity=alert.severity,
                 status=alert.status,
                 score=alert.score,
-                home_id=alert.home_id,
-                room_id=alert.room_id,
-                device_id=alert.device_id,
                 created_at=alert.created_at,
                 acked_at=alert.acked_at,
                 escalated_at=alert.escalated_at,
                 closed_at=alert.closed_at,
+                notes=alert.notes,
             )
         )
     return result

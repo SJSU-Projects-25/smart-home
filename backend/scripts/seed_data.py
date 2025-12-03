@@ -2,6 +2,7 @@
 import sys
 from pathlib import Path
 from datetime import datetime, timedelta
+import random
 
 # Add parent directory to path to import app modules
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -324,32 +325,88 @@ def seed_all_data(force: bool = False):
 
         # 5. Create Alerts
         print("\n🚨 Creating alerts...")
-        alerts_data = [
-            ("scream", "high", "open", 0.95, owner_home.id, rooms[0].id, devices[0].id),
-            ("smoke_alarm", "high", "acked", 0.88, owner_home.id, rooms[1].id, devices[1].id),
-            ("glass_break", "medium", "escalated", 0.72, owner_home.id, rooms[2].id, devices[2].id),
-            ("scream", "low", "closed", 0.45, owner_home.id, rooms[3].id, devices[3].id),
+
+        # Homes and their associated room/device slices for generating alerts
+        homes_for_alerts = [
+            (owner_home, rooms[0:6], devices[0:8]),
+            (owner_home2, rooms[6:10], devices[8:12]),
+            (owner_home3, rooms[10:15], devices[12:17]),
+            (owner_home4, rooms[15:23], devices[17:26]),
+            (admin_home, rooms[23:27], devices[26:]),
         ]
-        for alert_type, severity, alert_status, score, home_id, room_id, device_id in alerts_data:
-            alert = Alert(
-                type=alert_type,
-                severity=severity,
-                status=alert_status,
-                score=score,
-                home_id=home_id,
-                room_id=room_id,
-                device_id=device_id,
-                created_at=datetime.utcnow() - timedelta(hours=2),
-            )
-            if alert_status == "acked":
-                alert.acked_at = datetime.utcnow() - timedelta(hours=1)
-            elif alert_status == "escalated":
-                alert.escalated_at = datetime.utcnow() - timedelta(minutes=30)
-            elif alert_status == "closed":
-                alert.closed_at = datetime.utcnow() - timedelta(minutes=15)
-            db.add(alert)
+
+        base_types = ["scream", "smoke_alarm", "glass_break", "footsteps", "door_knock", "water_running"]
+        severity_weights = [0.6, 0.3, 0.1]  # low, medium, high
+        status_weights = [0.5, 0.25, 0.15, 0.1]  # open, acked, escalated, closed
+        severities = ["low", "medium", "high"]
+        statuses = ["open", "acked", "escalated", "closed"]
+
+        now = datetime.utcnow()
+
+        # Choose a few random spike days where alert volume is higher
+        spike_days = {random.randint(0, 29) for _ in range(4)}
+
+        total_generated = 0
+
+        for day_offset in range(30):
+            # More alerts on recent days, fewer further back
+            recency_factor = max(0.4, 1.2 - (day_offset / 40.0))
+            for home, home_rooms, home_devices in homes_for_alerts:
+                # Base rate differs slightly per home to create variation
+                base_rate = 1 + homes_for_alerts.index((home, home_rooms, home_devices)) % 3
+                # Randomize count with some noise
+                count = max(
+                    0,
+                    int(
+                        random.gauss(
+                            mu=base_rate * recency_factor, sigma=0.75
+                        )
+                    ),
+                )
+                # Spike days: add a burst of alerts for this home
+                if day_offset in spike_days:
+                    count += random.randint(3, 7)
+
+                if count == 0:
+                    continue
+
+                for i in range(count):
+                    severity = random.choices(severities, weights=severity_weights, k=1)[0]
+                    status = random.choices(statuses, weights=status_weights, k=1)[0]
+                    alert_type = random.choice(base_types)
+                    room = random.choice(home_rooms)
+                    device = random.choice(home_devices)
+
+                    # Score loosely tied to severity with some jitter
+                    base_score = {"low": 0.4, "medium": 0.6, "high": 0.8}[severity]
+                    score = max(0.0, min(1.0, base_score + random.uniform(-0.1, 0.1)))
+
+                    created_at = now - timedelta(
+                        days=day_offset, hours=random.randint(0, 23), minutes=random.randint(0, 59)
+                    )
+
+                    alert = Alert(
+                        type=alert_type,
+                        severity=severity,
+                        status=status,
+                        score=score,
+                        home_id=home.id,
+                        room_id=room.id,
+                        device_id=device.id,
+                        created_at=created_at,
+                    )
+                    if status == "acked":
+                        alert.acked_at = created_at + timedelta(minutes=random.randint(5, 30))
+                    elif status == "escalated":
+                        alert.escalated_at = created_at + timedelta(minutes=random.randint(10, 60))
+                    elif status == "closed":
+                        alert.closed_at = created_at + timedelta(minutes=random.randint(15, 90))
+
+                    db.add(alert)
+                    total_generated += 1
+
         db.flush()
-        print(f"   ✅ Created {len(alerts_data)} alerts")
+        print(f"   ✅ Created ~{total_generated} realistic alerts across multiple homes")
 
         # 6. Create Contacts
         print("\n📞 Creating contacts...")

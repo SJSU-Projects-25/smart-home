@@ -21,3 +21,4 @@ async def tech_overview_endpoint(
     """Get technician overview statistics for assigned homes."""
     return get_tech_overview(db, settings, current_user.id)
 
+

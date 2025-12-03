@@ -77,3 +77,4 @@ def get_admin_overview(db: Session, settings: Settings) -> dict:
         "topHomesByAlerts": top_homes,
     }
 
+

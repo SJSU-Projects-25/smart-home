@@ -367,3 +367,4 @@ All dashboards are fully responsive:
 
 **Enjoy your beautiful, Google-style analytics dashboards!** 🎉
 
+

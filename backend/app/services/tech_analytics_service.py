@@ -113,3 +113,4 @@ def get_tech_overview(db: Session, settings: Settings, user_id: UUID) -> dict:
         "homes": homes_data,
     }
 
+

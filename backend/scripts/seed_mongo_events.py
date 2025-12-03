@@ -144,3 +144,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     seed_mongo_events(force=args.force)
 
+

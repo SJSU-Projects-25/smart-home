@@ -132,3 +132,4 @@ SMTP_USE_TLS=true
 SMTP_FROM_EMAIL=Smart Home Platform <notifications@yourcompany.com>
 ```
 
+

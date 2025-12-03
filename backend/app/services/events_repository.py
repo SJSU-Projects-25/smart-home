@@ -133,3 +133,4 @@ class EventsRepository:
         results = list(self.events.aggregate(pipeline))
         return results
 
+

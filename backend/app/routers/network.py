@@ -28,3 +28,4 @@ async def get_network_status_endpoint(
     network_status = get_device_network_status(db, settings, UUID(validated_home_id))
     return network_status
 
+

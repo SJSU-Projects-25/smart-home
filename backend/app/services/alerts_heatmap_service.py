@@ -63,3 +63,4 @@ def get_alerts_heatmap(db: Session, period: str = "24h") -> list[dict]:
 
     return result
 
+

@@ -64,3 +64,4 @@ export function DeviceUptimeGauge({ uptimePercent, deviceName, height = 120 }: D
   );
 }
 
+
