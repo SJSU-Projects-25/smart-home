@@ -377,28 +377,73 @@ async def list_all_models_endpoint(
     current_user: Annotated[User, Depends(require_role("admin"))] = None,
     db: Annotated[Session, Depends(get_db)] = None,
 ):
-    """List all model configs across all homes (admin only)."""
+    """List all model configs across all homes (admin only).
+
+    This endpoint returns **all supported detection models** for every home,
+    even if a specific model doesn't yet have an explicit configuration row
+    in the database. Missing configs are represented with sensible defaults
+    (enabled=true, threshold=0.5, empty params) so the admin view always
+    shows the full matrix of homes × models.
+    """
     from app.db.models import ModelConfig, Home
 
-    query = db.query(ModelConfig)
-    
-    if enabled is not None:
-        query = query.filter(ModelConfig.enabled == enabled)
-    
-    configs = query.order_by(ModelConfig.home_id).all()
-    
-    result = []
-    for config in configs:
-        home = db.query(Home).filter(Home.id == config.home_id).first()
-        result.append({
-            "id": str(config.id),
-            "model_key": config.model_key,
-            "enabled": config.enabled,
-            "threshold": config.threshold,
-            "params": config.params_json or {},
-            "home_id": str(config.home_id),
-            "home_name": home.name if home else None,
-        })
+    # Keep this list in sync with the frontend MODEL_CONFIG in
+    # `frontend/app/(dashboard)/models/page.tsx`
+    SUPPORTED_MODEL_KEYS = [
+        "fall_impact",
+        "distress_pain",
+        "choking_vomiting",
+        "breathing_emergency",
+        "fire_smoke_alarm",
+        "glass_break",
+        "coughing",
+        "water_running",
+        "door_knock",
+        "footsteps",
+    ]
+
+    homes = db.query(Home).all()
+    existing_configs = db.query(ModelConfig).all()
+
+    # Index existing configs by (home_id, model_key)
+    config_map: dict[tuple[str, str], ModelConfig] = {}
+    for cfg in existing_configs:
+        key = (str(cfg.home_id), cfg.model_key)
+        config_map[key] = cfg
+
+    result: list[dict] = []
+
+    for home in homes:
+        home_id_str = str(home.id)
+        for model_key in SUPPORTED_MODEL_KEYS:
+            cfg = config_map.get((home_id_str, model_key))
+
+            # Determine effective values (use defaults if config missing)
+            cfg_enabled = cfg.enabled if cfg is not None else True
+            cfg_threshold = cfg.threshold if cfg is not None else 0.5
+            cfg_params = cfg.params_json or {} if cfg is not None else {}
+
+            # Apply enabled filter (if provided)
+            if enabled is not None and cfg_enabled is not enabled:
+                continue
+
+            # Use the real DB id when present; otherwise a synthetic id
+            cfg_id = str(cfg.id) if cfg is not None else f"default-{home_id_str}-{model_key}"
+
+            result.append(
+                {
+                    "id": cfg_id,
+                    "model_key": model_key,
+                    "enabled": cfg_enabled,
+                    "threshold": cfg_threshold,
+                    "params": cfg_params,
+                    "home_id": home_id_str,
+                    "home_name": home.name,
+                }
+            )
+
+    # Sort by home name then model key for a stable UI
+    result.sort(key=lambda r: (r["home_name"] or "", r["model_key"]))
     return result
 
 
