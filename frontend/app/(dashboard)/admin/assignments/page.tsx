@@ -36,11 +36,13 @@ export const dynamic = "force-dynamic";
 export default function AdminAssignmentsPage() {
   const { data: users, isLoading: usersLoading } = useListUsersQuery();
   const { data: homes, isLoading: homesLoading } = useListHomesQuery();
-  const {
-    data: assignments,
-    isLoading: assignmentsLoading,
-    refetch: refetchAssignments,
-  } = useListAdminAssignmentsQuery();
+  const { data: assignments, isLoading: assignmentsLoading } = useListAdminAssignmentsQuery(
+    undefined,
+    {
+      // Always refetch on mount so we don't rely on potentially stale cached data
+      refetchOnMountOrArgChange: true,
+    }
+  );
 
   const [selectedTechId, setSelectedTechId] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<{
