@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { Typography, Box, Card, CardContent, Alert, Skeleton } from "@mui/material";
@@ -13,9 +14,21 @@ export default function TechAssignmentsPage() {
   const router = useRouter();
   const user = useSelector((state: RootState) => state.auth.user);
 
-  const { data: assignments, isLoading, error } = useListAssignmentsQuery(undefined, {
+  const {
+    data: assignments,
+    isLoading,
+    error,
+    refetch,
+  } = useListAssignmentsQuery(undefined, {
     skip: !user,
   });
+
+  // Ensure we always refetch assignments when a user logs in or switches
+  useEffect(() => {
+    if (user) {
+      refetch();
+    }
+  }, [user, refetch]);
 
   const handleRowClick = (params: GridRowParams) => {
     const homeId = params.row.home_id;

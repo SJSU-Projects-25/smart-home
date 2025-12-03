@@ -46,6 +46,7 @@ const ownerNavItems: NavItem[] = [
   { label: "Overview", path: "/overview", icon: <DashboardIcon />, roles: ["owner"] },
   { label: "Alerts", path: "/alerts", icon: <NotificationsIcon />, roles: ["owner"] },
   { label: "Devices", path: "/devices", icon: <DevicesIcon />, roles: ["owner"] },
+  { label: "Install Plan", path: "/installation-requests", icon: <AssignmentIcon />, roles: ["owner"] },
   { label: "Models", path: "/models", icon: <ScienceIcon />, roles: ["owner"] },
   { label: "Settings", path: "/settings/contacts", icon: <SettingsIcon />, roles: ["owner"], section: "Settings" },
 ];
@@ -53,6 +54,7 @@ const ownerNavItems: NavItem[] = [
 const technicianNavItems: NavItem[] = [
   { label: "Overview", path: "/tech/overview", icon: <DashboardIcon />, roles: ["technician"], section: "Tech" },
   { label: "Assignments", path: "/tech/assignments", icon: <AssignmentIcon />, roles: ["technician"] },
+  { label: "Install Requests", path: "/tech/installation-requests", icon: <AssignmentIcon />, roles: ["technician"] },
   { label: "Devices", path: "/tech/devices", icon: <DevicesIcon />, roles: ["technician"] },
   { label: "Tests", path: "/tech/tests", icon: <ScienceIcon />, roles: ["technician"] },
   { label: "Network", path: "/tech/network", icon: <NetworkCheckIcon />, roles: ["technician"] },

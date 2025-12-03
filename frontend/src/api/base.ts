@@ -28,6 +28,7 @@ export const api = createApi({
     "Assignment",
     "OpsHouse",
     "AuditLog",
+    "InstallationRequest",
   ],
   endpoints: () => ({}),
 });
